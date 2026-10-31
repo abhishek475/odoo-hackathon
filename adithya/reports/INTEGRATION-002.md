@@ -191,3 +191,9 @@ Devang 0caae4e conflicts are resolved to the selected package files and connecte
 | backend/supabase/seed.sql | excluded alternate-schema/demo seed; real account setup documented in backend/README.md |
 
 The completed merge resolution should preserve exactly the tested application tree from 98e7b0d, with only this evidence added. Git ancestry, rather than deleting or rewriting remote branches, records the reconciled histories.
+
+## Local completion / publication gate
+
+Reconciled application merge commit: b7a52f6a02428ae2eeb7df1c2c0ec6a319a9fa2f. origin/main, origin/abhishek, origin/devang and origin/adithya-branch all pass git merge-base --is-ancestor against this commit after a fresh fetch. Application diff against validated 98e7b0d is empty; only merge evidence/report changed. git diff cce6afe HEAD --check passes. No tracked node_modules, dist, generated Prisma or local env files. Main was not modified.
+
+Automatic approval review rejected git push origin HEAD:adithya-branch before execution because AGENTS.md requires explicit owner enablement for pushing. No bypass or alternate publication attempted. Explicit permission requested from the owner; publication remains pending. No CHECK announcement and no PR request made because an actual pushed integration SHA is not available. Owner must still fill DATABASE_URL; env preflight continues to identify only that setting.
