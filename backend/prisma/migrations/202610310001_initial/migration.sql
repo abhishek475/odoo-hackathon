@@ -384,4 +384,3 @@ ALTER TABLE "bl_payments" ADD CONSTRAINT "bl_payments_recordedById_fkey" FOREIGN
 
 -- AddForeignKey
 ALTER TABLE "bl_audit_logs" ADD CONSTRAINT "bl_audit_logs_actorId_fkey" FOREIGN KEY ("actorId") REFERENCES "bl_users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-

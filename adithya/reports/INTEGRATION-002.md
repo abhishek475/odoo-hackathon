@@ -29,6 +29,8 @@ Initial restricted backend test invocation failed due sandbox process/port restr
 
 Real DATABASE_URL; rotated keys; shared database migration history review; live auth/profile/admin setup; database readiness and persistence; SMTP delivery; representative 10,000-record performance. No scheduler, gateway, refund or chargeback integration. Runtime/end-to-end production integration is not established without those services. Publication is only to adithya-branch; no PR or main approval is inferred.
 
+The first staged diff check found a trailing blank line in the imported initial SQL migration. Removed that whitespace without changing SQL semantics and reran the staged check before publication.
+
 ## Every changed file
 
 - `.gitignore`: Ignore dependencies, generated clients, local credentials, logs and output; preserve existing local automation exclusions.
@@ -42,7 +44,7 @@ Real DATABASE_URL; rotated keys; shared database migration history review; live 
 - `backend/package-lock.json`: Import unchanged from Abhishek 8f33acd; retain selected backend implementation, migration/schema, tooling or documentation.
 - `backend/package.json`: Preserve supplied backend scripts/dependencies and add real HTTP test command.
 - `backend/prisma.config.ts`: Import unchanged from Abhishek 8f33acd; retain selected backend implementation, migration/schema, tooling or documentation.
-- `backend/prisma/migrations/202610310001_initial/migration.sql`: Import unchanged from Abhishek 8f33acd; retain selected backend implementation, migration/schema, tooling or documentation.
+- `backend/prisma/migrations/202610310001_initial/migration.sql`: Import selected initial schema; remove its trailing blank line to satisfy the staged whitespace gate. No SQL behavior change.
 - `backend/prisma/migrations/202610310002_constraints_and_security/migration.sql`: Import unchanged from Abhishek 8f33acd; retain selected backend implementation, migration/schema, tooling or documentation.
 - `backend/prisma/migrations/migration_lock.toml`: Import unchanged from Abhishek 8f33acd; retain selected backend implementation, migration/schema, tooling or documentation.
 - `backend/prisma/schema.prisma`: Import unchanged from Abhishek 8f33acd; retain selected backend implementation, migration/schema, tooling or documentation.
