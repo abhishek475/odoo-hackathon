@@ -43,8 +43,13 @@ missing gate commands; missing scripts are never invented as passing checks.
   explicit-message compatibility, legacy bot replies, simultaneous human/bot
   additions, bot examples and real-script discovery without fake gates.
 
-**27 automated supervisor tests passed.** A real normal-English setup question is
-included to verify live ingestion and replies. The worker continues as the same
+**29 automated supervisor tests passed.** The live normal-English setup question
+was ingested as CONV-0001 and its answer was posted on GitHub, confirming the
+conversation ID without manual task syntax. Replies did not create extra requests.
+After acknowledging new stack decisions or a request to resume development, the
+supervisor can requeue a prerequisite-blocked owner milestone only when the worker
+checkout is clean. Git/push failures and preserved edits require inspection rather
+than automatic retry. The worker continues as the same
 background user service. Python/configuration/logs/state remain local and ignored.
 Application implementation still depends on confirmed requirements and real checks;
 no feature completion or API integration is claimed by this chat update.
