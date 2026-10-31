@@ -157,3 +157,37 @@ The first staged diff check found a trailing blank line in the imported initial 
 - `tailwind.config.js`: Relocate to frontend/tailwind.config.js; content preserved in the frontend package.
 - `tsconfig.json`: Relocate to frontend/tsconfig.json; content preserved in the frontend package.
 - `vite.config.ts`: Relocate to frontend/vite.config.ts; content preserved in the frontend package.
+
+## Merge resolution evidence
+
+Merged fetched main into adithya-branch (b8f9a9a), resolving duplicate root frontend files to their preserved frontend/ copies. Merged Abhishek (23b8624), after comparing all 27 newly introduced root paths against backend/: 26 byte-identical and the initial SQL migration whitespace-only. Root package/docs conflicts use the validated coordinator and current docs. No implementation was lost in this relocation.
+
+Automatic approval review rejected one repository-wide restore as potentially discarding unreviewed changes. It was not executed. After per-file comparison, only verified relocated duplicates and explicitly inspected conflicts were resolved with scoped commands. The owner-confirmed schema also governs the Devang resolution below; original remote branches remain intact.
+
+Devang 0caae4e conflicts are resolved to the selected package files and connected implementation. Existing Adithya responsive/catalog fixes remain in the demo. Devang's CRUD/auth intent is fulfilled through live/ConnectedApp.tsx and services/liveApi.ts using the actual /api contracts. Its alternate backend files are deliberately excluded, rather than running two conflicting billing/auth/database implementations:
+
+| Incoming Devang file | Selected implementation / reason |
+| --- | --- |
+| backend/src/config/env.ts | backend/src/config.ts; strict server config without memory fallback/default JWT |
+| backend/src/config/supabase.ts | backend/src/services/auth.ts; stateless Supabase auth per request |
+| backend/src/engine/billingRunner.ts | backend/src/services/core.ts; authoritative explicit due-period invoice generation; batch runner remains unintegrated |
+| backend/src/engine/discountEngine.ts | backend/src/services/pricing.ts; selected decimal/discount policy |
+| backend/src/engine/stateMachine.ts | backend/src/services/core.ts; selected transactional lifecycle checks |
+| backend/src/index.test.ts | backend/tests/api.test.ts; actual selected API boundary tests; alternate engine tests not claimed |
+| backend/src/index.ts | backend/src/server.ts and app.ts; selected /api server |
+| backend/src/middleware/authMiddleware.ts | backend/src/middleware.ts; authoritative DB role, no x-demo-role bypass |
+| backend/src/middleware/validate.ts | backend/src/lib/errors.ts and route Zod schemas |
+| backend/src/repository/dataStore.ts | backend/src/db.ts, Prisma models and transactional services; no seeded memory success |
+| backend/src/routes/analytics.routes.ts | backend/src/routes/reports.ts |
+| backend/src/routes/auth.routes.ts | backend/src/routes/auth.ts with Supabase identities |
+| backend/src/routes/billing.routes.ts | backend/src/routes/invoices.ts; manual server invoice generation |
+| backend/src/routes/catalog.routes.ts | backend/src/routes/catalog.ts |
+| backend/src/routes/discount.routes.ts | backend/src/routes/catalog.ts discount routes |
+| backend/src/routes/payment.routes.ts | backend/src/routes/invoices.ts and services/payments.ts; receipt idempotency |
+| backend/src/routes/subscription.routes.ts | backend/src/routes/subscriptions.ts |
+| backend/src/types/models.ts | backend/prisma/schema.prisma, src/types.ts and strict route schemas |
+| backend/supabase/migrations/001_init_brightloop_schema.sql | backend/prisma/migrations; owner selected bl_* instead of users/products/billing_plans schema |
+| backend/supabase/migrations/002_grant_permissions.sql | selected constraints/security migration; do not grant browser roles CRUD on all public tables |
+| backend/supabase/seed.sql | excluded alternate-schema/demo seed; real account setup documented in backend/README.md |
+
+The completed merge resolution should preserve exactly the tested application tree from 98e7b0d, with only this evidence added. Git ancestry, rather than deleting or rewriting remote branches, records the reconciled histories.
