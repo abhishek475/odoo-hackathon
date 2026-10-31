@@ -7,3 +7,11 @@ __pycache__/
 .env
 .env.*
 !.env.example
+
+# Node / Frontend build artifacts
+node_modules/
+dist/
+dist-ssr/
+*.local
+.DS_Store
+
