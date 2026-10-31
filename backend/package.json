@@ -14,6 +14,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
     "admin:bootstrap": "tsx scripts/bootstrap-admin.ts",
+    "admin:seed": "tsx scripts/seed-admin.ts",
     "postinstall": "prisma generate",
     "test": "node --import tsx --test tests/*.test.ts"
   },
