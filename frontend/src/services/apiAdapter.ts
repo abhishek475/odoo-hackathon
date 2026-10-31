@@ -26,7 +26,7 @@ import {
 // CRITICAL ZERO-FAILURE FLAG: Fallback to mock store if backend is unavailable
 export const USE_MOCK_FALLBACK = true;
 
-const API_BASE_URL = 'http://localhost:4000/api/v1';
+const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:4000/api/v1';
 
 const isBrowser = typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
 const isTestEnv =
