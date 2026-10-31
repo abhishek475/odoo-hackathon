@@ -146,3 +146,38 @@ Conversation: ADITHYA-BRIGHTLOOP-01. Message: CONV-0003. Received your message; 
 [CODEX CONV-0003][ACK] 2026-10-31T11:13:22.939658+05:30
 Inspecting repository and assigned frontend scope.
 [END CODEX]
+
+[BEGIN CODEX]
+[CODEX CONV-0003][BLOCKED] 2026-10-31T11:15:25.932932+05:30
+Task stopped; partial work preserved. Owner must inspect local logs/report before retry.
+
+OUTCOME: BLOCKED
+
+Agreed stack accepted. Implemented the scoped WORK 001 foundation; validation is blocked by dependency access.
+
+Files added:
+
+- `package.json`: stack dependencies and real lint/typecheck/test/build scripts.
+- `tsconfig.json`, `vite.config.ts`, `eslint.config.js`: TypeScript, React/Tailwind build, and lint configuration.
+- `index.html`, `src/main.tsx`: application entry points.
+- `src/styles.css`: requested dark/cyan theme.
+- `src/App.tsx`: foundation screen with explicitly labelled demo role switching.
+- `src/types/billing.ts`: provisional presentation models, not invented API contracts.
+- `src/mocks/seedData.ts`: isolated fixtures and 2,500-subscription generator.
+- `src/services/apiAdapter.ts`: injectable backend boundary and demo preference persistence. Configured backend failures remain failures.
+- `src/context/AppStateContext.tsx`: reactive loading, error, retry, and demo-role state.
+- `src/components/ui/button.tsx`, `src/lib/utils.ts`: shared shadcn-style button and styling utility.
+- `src/services/apiAdapter.test.ts`: adapter failure and persistence tests.
+- `docs/frontend-integration.md`: integration plan, contract requests, and validation results.
+
+Exact checks:
+
+- `npm install --cache /tmp/brightloop-npm-cache --no-audit --no-fund`: registry `EAI_AGAIN`; interrupted stalled installation.
+- `npm install --offline --cache /tmp/brightloop-npm-cache --no-audit --no-fund`: failed `ENOTCACHED`.
+- `npm run lint`: failed, `eslint` unavailable.
+- `npm run typecheck`: failed, `tsc` unavailable.
+- `npm test`: failed, `vitest` unavailable.
+- `npm run build`: failed, `tsc` unavailable.
+
+WORK 001 remains unvalidated. Business screens, real authentication, billing mutations, API integration, and performance verification remain pending. Engineer 2’s contracts and working dependency access are needed next. No Git operations or protected collaboration-file edits were performed.
+[END CODEX]
