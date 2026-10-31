@@ -94,18 +94,14 @@ class ApiAdapter {
 
   // TODO: [BACKEND_HOOK] - POST /api/v1/products - Payload: Omit<Product, 'id' | 'createdAt'> - Returns: Promise<Product>
   async createProduct(data: Omit<Product, 'id' | 'createdAt'>): Promise<Product> {
-    try {
-      const newProduct: Product = {
-        ...data,
-        id: `prod-${Date.now().toString(36)}`,
-        createdAt: new Date().toISOString(),
-      };
-      this.products = [newProduct, ...this.products];
-      saveStorage(STORAGE_KEYS.PRODUCTS, this.products);
-      return newProduct;
-    } catch {
-      return this.products[0];
-    }
+    const newProduct: Product = {
+      ...data,
+      id: `prod-${globalThis.crypto.randomUUID()}`,
+      createdAt: new Date().toISOString(),
+    };
+    this.products = [newProduct, ...this.products];
+    saveStorage(STORAGE_KEYS.PRODUCTS, this.products);
+    return newProduct;
   }
 
   // -------------------------------------------------------------

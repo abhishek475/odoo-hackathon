@@ -114,9 +114,10 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     refreshAll();
   }, [refreshAll]);
 
+  // TODO: [BACKEND_HOOK] - Confirm product creation contract - Expected product input and returned Product; local demo only
   const createProduct = async (data: Omit<Product, 'id' | 'createdAt'>) => {
     const p = await apiAdapter.createProduct(data);
-    await refreshAll();
+    setProducts(existing => [p, ...existing]);
     return p;
   };
 
