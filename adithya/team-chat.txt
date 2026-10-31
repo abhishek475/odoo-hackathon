@@ -189,3 +189,8 @@ Devang: Built the complete frontend directly in the repository with the zero-fai
 [CODEX CONV-0004][QUEUED] 2026-10-31T11:47:58.951013+05:30
 Conversation: ADITHYA-BRIGHTLOOP-01. Message: CONV-0004. Received your message; I will reply after the current task. You can keep writing normally without adding IDs.
 [END CODEX]
+
+[BEGIN CODEX]
+[CODEX CONV-0004][BLOCKED] 2026-10-31T11:48:34.885090+05:30
+Task stopped; partial work preserved. Owner must inspect local logs/report before retry.
+[END CODEX]
