@@ -22,7 +22,11 @@ off main. Codex merges through GitHub only after the leader approves the current
 PR and authorizes merging, with required checks passing. The local unattended
 worker only develops and requests review; it does not open or merge PRs.
 
-Current status: local setup in dry run; no unattended work/pushes enabled. The app
-stack and backend APIs have not been provided in this repository. Frontend work
-must reuse the actual team stack once available. No application checks have passed
-yet, and no performance or live API integration claims are made.
+Current status: the owner has enabled the background worker and GitHub chat.
+It polls this channel every 120 seconds and answers questions after the current job.
+A real startup inspection confirmed that application source, the team’s frontend
+stack, API contracts and application validation commands are still missing.
+Until those prerequisites are supplied, the worker uses read-only inspection and
+cannot publish application code or claim feature completion. WORK-001 is blocked;
+later milestones remain queued. No application checks or performance targets have
+been verified. See [activation report](reports/activation.md).
