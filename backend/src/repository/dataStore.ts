@@ -19,7 +19,7 @@ import {
 import { assertValidSubscriptionTransition, assertValidInvoiceTransition } from '../engine/stateMachine.js';
 import { BillingRunner } from '../engine/billingRunner.js';
 
-// Initial In-Memory Seed Data for DB_FALLBACK_MODE
+// Initial Seed Data for local memory / fallback
 const INITIAL_USERS: User[] = [
   {
     id: 'usr-admin-1',
@@ -363,6 +363,187 @@ const INITIAL_PAYMENTS: PaymentRecord[] = [
   },
 ];
 
+// Database Row <-> TypeScript Model Mappers
+function mapDbSubscriptionToModel(row: any): Subscription {
+  return {
+    id: row.id,
+    subscriptionNumber: row.subscription_number,
+    customerId: row.customer_id,
+    customerName: row.customer_name,
+    customerEmail: row.customer_email,
+    planId: row.plan_id || '',
+    planName: row.plan_name || '',
+    cadence: row.cadence,
+    status: row.status,
+    startDate: row.start_date ? String(row.start_date).split('T')[0] : '',
+    nextBillingDate: row.next_billing_date ? String(row.next_billing_date).split('T')[0] : '',
+    endDate: row.end_date ? String(row.end_date).split('T')[0] : undefined,
+    autoClose: Boolean(row.auto_close),
+    pauseAllowed: Boolean(row.pause_allowed),
+    lines: Array.isArray(row.lines) ? row.lines : [],
+    totalAmount: typeof row.total_amount_cents === 'number' ? toDollars(row.total_amount_cents) : 0,
+    notes: row.notes || '',
+    history: Array.isArray(row.history) ? row.history : [],
+  };
+}
+
+function subscriptionToDb(sub: Subscription) {
+  return {
+    id: sub.id,
+    subscription_number: sub.subscriptionNumber,
+    customer_id: sub.customerId,
+    customer_name: sub.customerName,
+    customer_email: sub.customerEmail,
+    plan_id: sub.planId || null,
+    plan_name: sub.planName,
+    cadence: sub.cadence,
+    status: sub.status,
+    start_date: sub.startDate,
+    next_billing_date: sub.nextBillingDate,
+    end_date: sub.endDate || null,
+    auto_close: sub.autoClose,
+    pause_allowed: sub.pauseAllowed,
+    lines: sub.lines || [],
+    total_amount_cents: toCents(sub.totalAmount),
+    notes: sub.notes || '',
+    history: sub.history || [],
+  };
+}
+
+function mapDbInvoiceToModel(row: any): Invoice {
+  return {
+    id: row.id,
+    invoiceNumber: row.invoice_number,
+    subscriptionId: row.subscription_id || undefined,
+    customerId: row.customer_id,
+    customerName: row.customer_name,
+    customerEmail: row.customer_email,
+    customerAddress: row.customer_address || '',
+    status: row.status,
+    issueDate: row.issue_date ? String(row.issue_date).split('T')[0] : '',
+    dueDate: row.due_date ? String(row.due_date).split('T')[0] : '',
+    lines: Array.isArray(row.lines) ? row.lines : [],
+    subtotal: toDollars(row.subtotal_cents || 0),
+    discountAmount: toDollars(row.discount_amount_cents || 0),
+    taxAmount: toDollars(row.tax_amount_cents || 0),
+    totalAmount: toDollars(row.total_amount_cents || 0),
+    amountPaid: toDollars(row.amount_paid_cents || 0),
+    amountDue: toDollars(row.amount_due_cents || 0),
+    paymentHistory: Array.isArray(row.payment_history) ? row.payment_history : [],
+  };
+}
+
+function invoiceToDb(inv: Invoice) {
+  return {
+    id: inv.id,
+    invoice_number: inv.invoiceNumber,
+    subscription_id: inv.subscriptionId || null,
+    customer_id: inv.customerId,
+    customer_name: inv.customerName,
+    customer_email: inv.customerEmail,
+    customer_address: inv.customerAddress || '',
+    status: inv.status,
+    issue_date: inv.issueDate,
+    due_date: inv.dueDate,
+    lines: inv.lines || [],
+    subtotal_cents: toCents(inv.subtotal),
+    discount_amount_cents: toCents(inv.discountAmount),
+    tax_amount_cents: toCents(inv.taxAmount),
+    total_amount_cents: toCents(inv.totalAmount),
+    amount_paid_cents: toCents(inv.amountPaid),
+    amount_due_cents: toCents(inv.amountDue),
+    payment_history: inv.paymentHistory || [],
+  };
+}
+
+function mapDbProductToModel(row: any, variants: any[] = []): Product {
+  return {
+    id: row.id,
+    name: row.name,
+    type: row.type,
+    salesPrice: toDollars(row.sales_price_cents || 0),
+    costPrice: toDollars(row.cost_price_cents || 0),
+    notes: row.notes || '',
+    active: Boolean(row.active),
+    createdAt: row.created_at || new Date().toISOString(),
+    variants: variants.map(v => ({
+      id: v.id,
+      name: v.name,
+      priceModifier: toDollars(v.price_modifier_cents || 0),
+      sku: v.sku,
+    })),
+  };
+}
+
+function mapDbPlanToModel(row: any): BillingPlan {
+  return {
+    id: row.id,
+    name: row.name,
+    cadence: row.cadence,
+    minQuantity: row.min_quantity || 1,
+    validityDays: row.validity_days || 365,
+    autoClose: Boolean(row.auto_close),
+    pausePermission: Boolean(row.pause_permission),
+    basePrice: toDollars(row.base_price_cents || 0),
+    description: row.description || '',
+  };
+}
+
+function mapDbTemplateToModel(row: any): QuotationTemplate {
+  return {
+    id: row.id,
+    name: row.name,
+    planId: row.plan_id || '',
+    planName: row.plan_name || '',
+    validityDays: row.validity_days || 30,
+    notes: row.notes || '',
+    lines: Array.isArray(row.lines) ? row.lines : [],
+  };
+}
+
+function mapDbDiscountToModel(row: any): DiscountRule {
+  return {
+    id: row.id,
+    code: row.code,
+    name: row.name,
+    type: row.type,
+    value: row.type === 'PERCENT' ? row.value_cents_or_pct : toDollars(row.value_cents_or_pct || 0),
+    minOrderAmount: toDollars(row.min_order_amount_cents || 0),
+    validUntil: row.valid_until ? String(row.valid_until).split('T')[0] : '',
+    active: Boolean(row.active),
+    usageCount: row.usage_count || 0,
+  };
+}
+
+function mapDbPaymentToModel(row: any): PaymentRecord {
+  return {
+    id: row.id,
+    invoiceId: row.invoice_id,
+    invoiceNumber: row.invoice_number,
+    customerId: row.customer_id,
+    customerName: row.customer_name,
+    amount: toDollars(row.amount_cents || 0),
+    paymentMethod: row.payment_method,
+    referenceNumber: row.reference_number,
+    paymentDate: row.payment_date,
+    status: row.status,
+    notes: row.notes || undefined,
+  };
+}
+
+function mapDbUserToModel(row: any): User {
+  return {
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    role: row.role,
+    companyName: row.company_name || undefined,
+    avatarUrl: row.avatar_url || undefined,
+    passwordHash: row.password_hash || undefined,
+    createdAt: row.created_at,
+  };
+}
+
 class DataStore {
   private users: User[] = [...INITIAL_USERS];
   private products: Product[] = [...INITIAL_PRODUCTS];
@@ -373,7 +554,101 @@ class DataStore {
   private discounts: DiscountRule[] = [...INITIAL_DISCOUNTS];
   private payments: PaymentRecord[] = [...INITIAL_PAYMENTS];
 
+  private isDbConnected = false;
+
+  constructor() {
+    // Attempt background database hydration on construction
+    this.init().catch(err => {
+      console.warn('[DataStore Init Warning]', err?.message || err);
+    });
+  }
+
+  // ==============================================================================
+  // SUPABASE DATABASE HYDRATION & RECONCILIATION
+  // ==============================================================================
+  async init(): Promise<void> {
+    if (!supabaseAdmin) return;
+    try {
+      const { data: dbUsers, error: userErr } = await supabaseAdmin.from('users').select('*');
+      if (userErr) {
+        console.warn(
+          '\x1b[33m%s\x1b[0m',
+          `[Supabase Notice] Tables currently require permissions: ${userErr.message}.`
+        );
+        console.warn(
+          '\x1b[36m%s\x1b[0m',
+          `[Supabase Notice] To grant full access, execute 'backend/supabase/migrations/002_grant_permissions.sql' in Supabase SQL Editor. Operating with in-memory caching in the interim.`
+        );
+        return;
+      }
+
+      this.isDbConnected = true;
+
+      if (dbUsers && dbUsers.length > 0) {
+        this.users = dbUsers.map(mapDbUserToModel);
+      }
+
+      const [{ data: dbProducts }, { data: dbVariants }] = await Promise.all([
+        supabaseAdmin.from('products').select('*').order('created_at', { ascending: false }),
+        supabaseAdmin.from('product_variants').select('*'),
+      ]);
+      if (dbProducts && dbProducts.length > 0) {
+        this.products = dbProducts.map(p =>
+          mapDbProductToModel(p, (dbVariants || []).filter(v => v.product_id === p.id))
+        );
+      }
+
+      const { data: dbPlans } = await supabaseAdmin.from('billing_plans').select('*');
+      if (dbPlans && dbPlans.length > 0) {
+        this.plans = dbPlans.map(mapDbPlanToModel);
+      }
+
+      const { data: dbTemplates } = await supabaseAdmin.from('quotation_templates').select('*');
+      if (dbTemplates && dbTemplates.length > 0) {
+        this.templates = dbTemplates.map(mapDbTemplateToModel);
+      }
+
+      const { data: dbSubs } = await supabaseAdmin
+        .from('subscriptions')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (dbSubs && dbSubs.length > 0) {
+        this.subscriptions = dbSubs.map(mapDbSubscriptionToModel);
+      }
+
+      const { data: dbInvs } = await supabaseAdmin
+        .from('invoices')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (dbInvs && dbInvs.length > 0) {
+        this.invoices = dbInvs.map(mapDbInvoiceToModel);
+      }
+
+      const { data: dbDiscs } = await supabaseAdmin.from('discount_rules').select('*');
+      if (dbDiscs && dbDiscs.length > 0) {
+        this.discounts = dbDiscs.map(mapDbDiscountToModel);
+      }
+
+      const { data: dbPays } = await supabaseAdmin
+        .from('payments')
+        .select('*')
+        .order('payment_date', { ascending: false });
+      if (dbPays && dbPays.length > 0) {
+        this.payments = dbPays.map(mapDbPaymentToModel);
+      }
+
+      console.log(
+        '\x1b[32m%s\x1b[0m',
+        `✓ [Supabase Sync] Hydrated store from live PostgreSQL (${this.subscriptions.length} subscriptions, ${this.products.length} products, ${this.invoices.length} invoices).`
+      );
+    } catch (err: any) {
+      console.warn('[Supabase Sync Hydration Warning]', err?.message || err);
+    }
+  }
+
+  // ==============================================================================
   // USERS
+  // ==============================================================================
   async getUsers(): Promise<User[]> {
     return [...this.users];
   }
@@ -389,11 +664,32 @@ class DataStore {
       id: `usr-${Date.now().toString(36)}`,
       createdAt: new Date().toISOString(),
     };
+
+    if (supabaseAdmin) {
+      try {
+        const { error } = await supabaseAdmin.from('users').insert({
+          id: newUser.id,
+          name: newUser.name,
+          email: newUser.email,
+          password_hash: newUser.passwordHash || '',
+          role: newUser.role,
+          company_name: newUser.companyName || '',
+          avatar_url: newUser.avatarUrl || '',
+          created_at: newUser.createdAt,
+        });
+        if (error) console.warn('[Supabase Sync User Insert Notice]', error.message);
+      } catch (e: any) {
+        console.warn('[Supabase Sync User Catch]', e.message);
+      }
+    }
+
     this.users.push(newUser);
     return newUser;
   }
 
-  // PRODUCTS
+  // ==============================================================================
+  // PRODUCTS & VARIANTS
+  // ==============================================================================
   async getProducts(): Promise<Product[]> {
     return [...this.products];
   }
@@ -403,12 +699,46 @@ class DataStore {
       ...data,
       id: `prod-${Date.now().toString(36)}`,
       createdAt: new Date().toISOString(),
+      variants: data.variants || [],
     };
+
+    if (supabaseAdmin) {
+      try {
+        const { error: prodErr } = await supabaseAdmin.from('products').insert({
+          id: newProd.id,
+          name: newProd.name,
+          type: newProd.type,
+          sales_price_cents: toCents(newProd.salesPrice),
+          cost_price_cents: toCents(newProd.costPrice),
+          notes: newProd.notes || '',
+          active: newProd.active,
+          created_at: newProd.createdAt,
+        });
+        if (prodErr) console.warn('[Supabase Sync Product Insert Notice]', prodErr.message);
+
+        if (newProd.variants && newProd.variants.length > 0) {
+          const varRows = newProd.variants.map((v, idx) => ({
+            id: v.id || `var-${newProd.id.replace('prod-', '')}-${idx + 1}`,
+            product_id: newProd.id,
+            name: v.name,
+            price_modifier_cents: toCents(v.priceModifier),
+            sku: v.sku,
+          }));
+          const { error: varErr } = await supabaseAdmin.from('product_variants').insert(varRows);
+          if (varErr) console.warn('[Supabase Sync Variant Insert Notice]', varErr.message);
+        }
+      } catch (e: any) {
+        console.warn('[Supabase Sync Product Catch]', e.message);
+      }
+    }
+
     this.products.unshift(newProd);
     return newProd;
   }
 
-  // PLANS
+  // ==============================================================================
+  // BILLING PLANS
+  // ==============================================================================
   async getPlans(): Promise<BillingPlan[]> {
     return [...this.plans];
   }
@@ -418,11 +748,33 @@ class DataStore {
       ...data,
       id: `plan-${Date.now().toString(36)}`,
     };
+
+    if (supabaseAdmin) {
+      try {
+        const { error } = await supabaseAdmin.from('billing_plans').insert({
+          id: newPlan.id,
+          name: newPlan.name,
+          cadence: newPlan.cadence,
+          min_quantity: newPlan.minQuantity,
+          validity_days: newPlan.validityDays,
+          auto_close: newPlan.autoClose,
+          pause_permission: newPlan.pausePermission,
+          base_price_cents: toCents(newPlan.basePrice),
+          description: newPlan.description || '',
+        });
+        if (error) console.warn('[Supabase Sync Plan Insert Notice]', error.message);
+      } catch (e: any) {
+        console.warn('[Supabase Sync Plan Catch]', e.message);
+      }
+    }
+
     this.plans.push(newPlan);
     return newPlan;
   }
 
-  // TEMPLATES
+  // ==============================================================================
+  // QUOTATION TEMPLATES
+  // ==============================================================================
   async getTemplates(): Promise<QuotationTemplate[]> {
     return [...this.templates];
   }
@@ -432,11 +784,31 @@ class DataStore {
       ...data,
       id: `tmpl-${Date.now().toString(36)}`,
     };
+
+    if (supabaseAdmin) {
+      try {
+        const { error } = await supabaseAdmin.from('quotation_templates').insert({
+          id: newTemplate.id,
+          name: newTemplate.name,
+          plan_id: newTemplate.planId || null,
+          plan_name: newTemplate.planName,
+          validity_days: newTemplate.validityDays,
+          notes: newTemplate.notes || '',
+          lines: newTemplate.lines,
+        });
+        if (error) console.warn('[Supabase Sync Template Insert Notice]', error.message);
+      } catch (e: any) {
+        console.warn('[Supabase Sync Template Catch]', e.message);
+      }
+    }
+
     this.templates.unshift(newTemplate);
     return newTemplate;
   }
 
-  // SUBSCRIPTIONS
+  // ==============================================================================
+  // SUBSCRIPTIONS & LIFECYCLE
+  // ==============================================================================
   async getSubscriptions(filterCustomerId?: string): Promise<Subscription[]> {
     if (filterCustomerId) {
       return this.subscriptions.filter(s => s.customerId === filterCustomerId);
@@ -445,19 +817,24 @@ class DataStore {
   }
 
   async createSubscription(data: Partial<Subscription>): Promise<Subscription> {
-    const subNumber = `SUB-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const subNumber =
+      data.subscriptionNumber ||
+      `SUB-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
     const newSub: Subscription = {
-      id: `sub-${Date.now().toString(36)}`,
+      id: data.id || `sub-${Date.now().toString(36)}`,
       subscriptionNumber: subNumber,
       customerId: data.customerId || 'cust-direct',
       customerName: data.customerName || 'Direct Customer',
       customerEmail: data.customerEmail || 'billing@example.com',
-      planId: data.planId || this.plans[0].id,
-      planName: data.planName || this.plans[0].name,
+      planId: data.planId || (this.plans[0]?.id ?? 'plan-monthly'),
+      planName: data.planName || (this.plans[0]?.name ?? 'Pro Monthly Cadence'),
       cadence: data.cadence || 'MONTHLY',
       status: data.status || 'Draft',
       startDate: data.startDate || new Date().toISOString().split('T')[0],
-      nextBillingDate: data.nextBillingDate || new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+      nextBillingDate:
+        data.nextBillingDate ||
+        new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
       autoClose: data.autoClose ?? false,
       pauseAllowed: data.pauseAllowed ?? true,
       lines: data.lines || [],
@@ -471,6 +848,19 @@ class DataStore {
         },
       ],
     };
+
+    if (supabaseAdmin) {
+      try {
+        const { error } = await supabaseAdmin.from('subscriptions').insert(subscriptionToDb(newSub));
+        if (error) {
+          console.warn('[Supabase Sync Subscription Insert Notice]', error.message);
+        } else {
+          console.log(`[Supabase Sync] Persisted subscription ${newSub.subscriptionNumber} to database.`);
+        }
+      } catch (e: any) {
+        console.warn('[Supabase Sync Subscription Catch]', e.message);
+      }
+    }
 
     this.subscriptions.unshift(newSub);
     return newSub;
@@ -502,16 +892,47 @@ class DataStore {
       ],
     };
 
+    if (supabaseAdmin) {
+      try {
+        const { error } = await supabaseAdmin
+          .from('subscriptions')
+          .update({
+            status: newStatus,
+            history: updated.history,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', id);
+        if (error) console.warn('[Supabase Sync Status Update Notice]', error.message);
+      } catch (e: any) {
+        console.warn('[Supabase Sync Status Catch]', e.message);
+      }
+    }
+
     this.subscriptions[index] = updated;
     return updated;
   }
 
-  // INVOICES & BATCH BILLING
+  // ==============================================================================
+  // INVOICES & BATCH BILLING DAY
+  // ==============================================================================
   async getInvoices(filterCustomerId?: string): Promise<Invoice[]> {
     if (filterCustomerId) {
       return this.invoices.filter(i => i.customerId === filterCustomerId);
     }
     return [...this.invoices];
+  }
+
+  async createInvoice(invData: Invoice): Promise<Invoice> {
+    if (supabaseAdmin) {
+      try {
+        const { error } = await supabaseAdmin.from('invoices').insert(invoiceToDb(invData));
+        if (error) console.warn('[Supabase Sync Invoice Insert Notice]', error.message);
+      } catch (e: any) {
+        console.warn('[Supabase Sync Invoice Catch]', e.message);
+      }
+    }
+    this.invoices.unshift(invData);
+    return invData;
   }
 
   async updateInvoiceStatus(id: string, status: InvoiceStatus): Promise<Invoice> {
@@ -522,6 +943,22 @@ class DataStore {
     assertValidInvoiceTransition(current.status, status);
 
     current.status = status;
+
+    if (supabaseAdmin) {
+      try {
+        const { error } = await supabaseAdmin
+          .from('invoices')
+          .update({
+            status,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', id);
+        if (error) console.warn('[Supabase Sync Invoice Status Notice]', error.message);
+      } catch (e: any) {
+        console.warn('[Supabase Sync Invoice Status Catch]', e.message);
+      }
+    }
+
     return current;
   }
 
@@ -530,11 +967,33 @@ class DataStore {
 
     if (result.invoices.length > 0) {
       this.invoices = [...result.invoices, ...this.invoices];
-      // Update subscriptions next_billing_dates
+
+      // Update in-memory subscriptions
       for (const updatedSub of result.updatedSubscriptions) {
         const idx = this.subscriptions.findIndex(s => s.id === updatedSub.id);
         if (idx !== -1) {
           this.subscriptions[idx] = updatedSub;
+        }
+      }
+
+      // Synchronize with database
+      if (supabaseAdmin) {
+        try {
+          const invRows = result.invoices.map(invoiceToDb);
+          const { error: invErr } = await supabaseAdmin.from('invoices').insert(invRows);
+          if (invErr) console.warn('[Supabase Sync Batch Invoices Notice]', invErr.message);
+
+          for (const sub of result.updatedSubscriptions) {
+            await supabaseAdmin
+              .from('subscriptions')
+              .update({
+                next_billing_date: sub.nextBillingDate,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', sub.id);
+          }
+        } catch (e: any) {
+          console.warn('[Supabase Sync Batch Catch]', e.message);
         }
       }
     }
@@ -545,7 +1004,9 @@ class DataStore {
     };
   }
 
+  // ==============================================================================
   // PAYMENTS & RECONCILIATION
+  // ==============================================================================
   async getPayments(): Promise<PaymentRecord[]> {
     return [...this.payments];
   }
@@ -575,7 +1036,7 @@ class DataStore {
       notes: data.notes || '',
     };
 
-    // Exact financial reconciliation in cents
+    // Exact financial reconciliation in integer cents
     const paidCents = toCents(invoice.amountPaid) + toCents(data.amount);
     const totalCents = toCents(invoice.totalAmount);
     const dueCents = Math.max(0, totalCents - paidCents);
@@ -589,10 +1050,46 @@ class DataStore {
     invoice.paymentHistory.unshift(newPayment);
     this.payments.unshift(newPayment);
 
+    if (supabaseAdmin) {
+      try {
+        const payDb = {
+          id: newPayment.id,
+          invoice_id: invoice.id,
+          invoice_number: invoice.invoiceNumber,
+          customer_id: invoice.customerId,
+          customer_name: invoice.customerName,
+          amount_cents: toCents(data.amount),
+          payment_method: data.paymentMethod,
+          reference_number: data.referenceNumber,
+          payment_date: newPayment.paymentDate,
+          status: newPayment.status,
+          notes: newPayment.notes || '',
+        };
+        const { error: payErr } = await supabaseAdmin.from('payments').insert(payDb);
+        if (payErr) console.warn('[Supabase Sync Payment Insert Notice]', payErr.message);
+
+        const { error: invErr } = await supabaseAdmin
+          .from('invoices')
+          .update({
+            amount_paid_cents: paidCents,
+            amount_due_cents: dueCents,
+            status: invoice.status,
+            payment_history: invoice.paymentHistory,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', invoice.id);
+        if (invErr) console.warn('[Supabase Sync Invoice Payment Reconcile Notice]', invErr.message);
+      } catch (e: any) {
+        console.warn('[Supabase Sync Payment Catch]', e.message);
+      }
+    }
+
     return newPayment;
   }
 
+  // ==============================================================================
   // DISCOUNTS
+  // ==============================================================================
   async getDiscounts(): Promise<DiscountRule[]> {
     return [...this.discounts];
   }
@@ -603,6 +1100,26 @@ class DataStore {
       id: `disc-${Date.now().toString(36)}`,
       usageCount: 0,
     };
+
+    if (supabaseAdmin) {
+      try {
+        const { error } = await supabaseAdmin.from('discount_rules').insert({
+          id: newRule.id,
+          code: newRule.code,
+          name: newRule.name,
+          type: newRule.type,
+          value_cents_or_pct: newRule.type === 'PERCENT' ? newRule.value : toCents(newRule.value),
+          min_order_amount_cents: toCents(newRule.minOrderAmount),
+          valid_until: newRule.validUntil,
+          active: newRule.active,
+          usage_count: newRule.usageCount,
+        });
+        if (error) console.warn('[Supabase Sync Discount Insert Notice]', error.message);
+      } catch (e: any) {
+        console.warn('[Supabase Sync Discount Catch]', e.message);
+      }
+    }
+
     this.discounts.unshift(newRule);
     return newRule;
   }
@@ -611,11 +1128,38 @@ class DataStore {
     const rule = this.discounts.find(d => d.id === id);
     if (!rule) throw new Error(`Discount rule "${id}" not found.`);
     rule.active = !rule.active;
+
+    if (supabaseAdmin) {
+      try {
+        const { error } = await supabaseAdmin
+          .from('discount_rules')
+          .update({ active: rule.active })
+          .eq('id', id);
+        if (error) console.warn('[Supabase Sync Discount Toggle Notice]', error.message);
+      } catch (e: any) {
+        console.warn('[Supabase Sync Discount Toggle Catch]', e.message);
+      }
+    }
+
     return rule;
   }
 
-  // FINANCE METRICS (<50ms execution)
+  // ==============================================================================
+  // FINANCE METRICS (<50ms execution SLA)
+  // ==============================================================================
   async getFinanceMetrics(): Promise<FinanceMetrics> {
+    // Attempt Supabase RPC first if connected
+    if (supabaseAdmin && this.isDbConnected) {
+      try {
+        const { data: rpcMetrics, error } = await supabaseAdmin.rpc('get_finance_metrics');
+        if (!error && rpcMetrics && typeof rpcMetrics.activeMrr === 'number') {
+          return rpcMetrics as FinanceMetrics;
+        }
+      } catch {
+        // Fall back to ultra-fast in-memory calculation below
+      }
+    }
+
     let activeMrrCents = 0;
     let activeSubsCount = 0;
 

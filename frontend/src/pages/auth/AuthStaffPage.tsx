@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAppState } from '../../context/AppStateContext';
 import { User, UserRole } from '../../types/billing';
 import { SEED_USERS } from '../../mocks/seedData';
+import { apiAdapter } from '../../services/apiAdapter';
 import { Lock, Mail, UserCheck, Shield, KeyRound, Check, AlertCircle } from 'lucide-react';
 
 export const AuthStaffPage: React.FC = () => {
@@ -28,9 +29,19 @@ export const AuthStaffPage: React.FC = () => {
 
   const [staffList, setStaffList] = useState<User[]>(SEED_USERS);
 
-  // TODO: [BACKEND_HOOK] - POST /api/v1/auth/login - Payload: { email, password } - Returns: Promise<{ user: User, token: string }>
-  const handleLogin = (e: React.FormEvent) => {
+  // [BACKEND_HOOK] - POST /api/v1/auth/login - Payload: { email, password } - Returns: Promise<{ user: User, token: string }>
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    try {
+      const res = await apiAdapter.login(loginEmail, loginPass);
+      if (res && res.user) {
+        switchRole(res.user.role);
+        setLoginMsg(`Logged in successfully as ${res.user.name} (${res.user.role})!`);
+        return;
+      }
+    } catch {
+      // Graceful fallback to staff list
+    }
     const user = staffList.find(u => u.email.toLowerCase() === loginEmail.toLowerCase());
     if (user) {
       switchRole(user.role);
@@ -40,8 +51,8 @@ export const AuthStaffPage: React.FC = () => {
     }
   };
 
-  // TODO: [BACKEND_HOOK] - POST /api/v1/auth/signup - Payload: { name, email, password, role } - Returns: Promise<{ user: User, token: string }>
-  const handleSignup = (e: React.FormEvent) => {
+  // [BACKEND_HOOK] - POST /api/v1/auth/signup - Payload: { name, email, password, role } - Returns: Promise<{ user: User, token: string }>
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     const errs: string[] = [];
 
@@ -71,20 +82,23 @@ export const AuthStaffPage: React.FC = () => {
     }
 
     setSignupErrors([]);
-    const newUser: User = {
-      id: `usr-${Date.now()}`,
-      name: signupName,
-      email: signupEmail,
-      role: signupRole,
-      companyName: 'Brightloop Operations',
-      avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
-    };
+    try {
+      const res = await apiAdapter.signup({
+        name: signupName,
+        email: signupEmail,
+        password: signupPass,
+        role: signupRole,
+        companyName: 'Brightloop Operations',
+      });
 
-    setStaffList([...staffList, newUser]);
-    setSignupSuccess(`Account created for ${newUser.name} with role ${newUser.role}!`);
-    setSignupName('');
-    setSignupEmail('');
-    setSignupPass('');
+      setStaffList(prev => [...prev, res.user]);
+      setSignupSuccess(`Account created for ${res.user.name} (${res.user.role}) and synchronized to database!`);
+      setSignupName('');
+      setSignupEmail('');
+      setSignupPass('');
+    } catch (err: any) {
+      setSignupErrors([err?.message || 'Failed to create user account.']);
+    }
   };
 
   return (

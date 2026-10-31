@@ -4,7 +4,9 @@ import { env } from './env.js';
 let supabaseAdmin: SupabaseClient | null = null;
 let supabaseAnon: SupabaseClient | null = null;
 
-if (!env.DB_FALLBACK_MODE && env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
+const isTestEnv = process.env.NODE_ENV === 'test' || Boolean(process.env.VITEST);
+
+if (!isTestEnv && !env.DB_FALLBACK_MODE && env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
   try {
     supabaseAdmin = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
       auth: {

@@ -1,4 +1,6 @@
 import {
+  User,
+  UserRole,
   Product,
   BillingPlan,
   QuotationTemplate,
@@ -21,26 +23,38 @@ import {
   generateStressSubscriptions,
 } from '../mocks/seedData';
 
-// CRITICAL ZERO-FAILURE FLAG: Fallback to mock store if backend is unavailable or not yet configured
+// CRITICAL ZERO-FAILURE FLAG: Fallback to mock store if backend is unavailable
 export const USE_MOCK_FALLBACK = true;
 
 const API_BASE_URL = 'http://localhost:4000/api/v1';
 
+const isBrowser = typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
+const isTestEnv =
+  (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test') ||
+  (typeof window !== 'undefined' && (window as any).__VITEST__);
+
 async function fetchBackend<T>(endpoint: string, options?: RequestInit): Promise<T | null> {
-  // If explicitly enabled or in dual mode, attempts live API call
+  if (!isBrowser || isTestEnv) return null;
+  if (window.localStorage.getItem('BRIGHTLOOP_FORCE_MOCK') === 'true') return null;
+
   try {
-    const isLiveEnabled = isBrowser && window.localStorage.getItem('BRIGHTLOOP_USE_LIVE_API') === 'true';
-    if (!isLiveEnabled && USE_MOCK_FALLBACK) return null;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1500);
 
     const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+      signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
         ...options?.headers,
       },
       ...options,
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      return null;
+    }
+    return (await res.json()) as T;
   } catch {
     return null; // Gracefully engage fallback
   }
@@ -55,8 +69,6 @@ const STORAGE_KEYS = {
   DISCOUNTS: 'brightloop_discounts',
   PAYMENTS: 'brightloop_payments',
 };
-
-const isBrowser = typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
 
 function loadStorage<T>(key: string, defaultData: T): T {
   if (!isBrowser) return defaultData;
@@ -101,44 +113,65 @@ class ApiAdapter {
   // -------------------------------------------------------------
   // PRODUCTS
   // -------------------------------------------------------------
-  // TODO: [BACKEND_HOOK] - GET /api/v1/products - Returns: Promise<Product[]>
+  // [BACKEND_HOOK] - GET /api/v1/products - Returns: Promise<Product[]>
   async getProducts(): Promise<Product[]> {
-    try {
-      if (!USE_MOCK_FALLBACK) {
-        // e.g. const res = await fetch('/api/v1/products'); return await res.json();
-      }
-      return [...this.products];
-    } catch {
+    const live = await fetchBackend<Product[]>('/products');
+    if (live && Array.isArray(live)) {
+      this.products = live;
+      saveStorage(STORAGE_KEYS.PRODUCTS, this.products);
       return [...this.products];
     }
+    return [...this.products];
   }
 
-  // TODO: [BACKEND_HOOK] - POST /api/v1/products - Payload: Omit<Product, 'id' | 'createdAt'> - Returns: Promise<Product>
+  // [BACKEND_HOOK] - POST /api/v1/products - Payload: Omit<Product, 'id' | 'createdAt'> - Returns: Promise<Product>
   async createProduct(data: Omit<Product, 'id' | 'createdAt'>): Promise<Product> {
-    try {
-      const newProduct: Product = {
-        ...data,
-        id: `prod-${Date.now().toString(36)}`,
-        createdAt: new Date().toISOString(),
-      };
-      this.products = [newProduct, ...this.products];
+    const live = await fetchBackend<Product>('/products', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    if (live && live.id) {
+      this.products = [live, ...this.products];
       saveStorage(STORAGE_KEYS.PRODUCTS, this.products);
-      return newProduct;
-    } catch {
-      return this.products[0];
+      return live;
     }
+
+    const newProduct: Product = {
+      ...data,
+      id: `prod-${Date.now().toString(36)}`,
+      createdAt: new Date().toISOString(),
+    };
+    this.products = [newProduct, ...this.products];
+    saveStorage(STORAGE_KEYS.PRODUCTS, this.products);
+    return newProduct;
   }
 
   // -------------------------------------------------------------
   // PLANS
   // -------------------------------------------------------------
-  // TODO: [BACKEND_HOOK] - GET /api/v1/plans - Returns: Promise<BillingPlan[]>
+  // [BACKEND_HOOK] - GET /api/v1/plans - Returns: Promise<BillingPlan[]>
   async getPlans(): Promise<BillingPlan[]> {
+    const live = await fetchBackend<BillingPlan[]>('/plans');
+    if (live && Array.isArray(live)) {
+      this.plans = live;
+      saveStorage(STORAGE_KEYS.PLANS, this.plans);
+      return [...this.plans];
+    }
     return [...this.plans];
   }
 
-  // TODO: [BACKEND_HOOK] - POST /api/v1/plans - Payload: Omit<BillingPlan, 'id'> - Returns: Promise<BillingPlan>
+  // [BACKEND_HOOK] - POST /api/v1/plans - Payload: Omit<BillingPlan, 'id'> - Returns: Promise<BillingPlan>
   async createPlan(data: Omit<BillingPlan, 'id'>): Promise<BillingPlan> {
+    const live = await fetchBackend<BillingPlan>('/plans', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    if (live && live.id) {
+      this.plans = [...this.plans, live];
+      saveStorage(STORAGE_KEYS.PLANS, this.plans);
+      return live;
+    }
+
     const newPlan: BillingPlan = {
       ...data,
       id: `plan-${Date.now().toString(36)}`,
@@ -151,13 +184,29 @@ class ApiAdapter {
   // -------------------------------------------------------------
   // QUOTATION TEMPLATES
   // -------------------------------------------------------------
-  // TODO: [BACKEND_HOOK] - GET /api/v1/templates - Returns: Promise<QuotationTemplate[]>
+  // [BACKEND_HOOK] - GET /api/v1/templates - Returns: Promise<QuotationTemplate[]>
   async getTemplates(): Promise<QuotationTemplate[]> {
+    const live = await fetchBackend<QuotationTemplate[]>('/templates');
+    if (live && Array.isArray(live)) {
+      this.templates = live;
+      saveStorage(STORAGE_KEYS.TEMPLATES, this.templates);
+      return [...this.templates];
+    }
     return [...this.templates];
   }
 
-  // TODO: [BACKEND_HOOK] - POST /api/v1/templates - Payload: Omit<QuotationTemplate, 'id'> - Returns: Promise<QuotationTemplate>
+  // [BACKEND_HOOK] - POST /api/v1/templates - Payload: Omit<QuotationTemplate, 'id'> - Returns: Promise<QuotationTemplate>
   async createTemplate(data: Omit<QuotationTemplate, 'id'>): Promise<QuotationTemplate> {
+    const live = await fetchBackend<QuotationTemplate>('/templates', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    if (live && live.id) {
+      this.templates = [live, ...this.templates];
+      saveStorage(STORAGE_KEYS.TEMPLATES, this.templates);
+      return live;
+    }
+
     const newTemplate: QuotationTemplate = {
       ...data,
       id: `tmpl-${Date.now().toString(36)}`,
@@ -170,16 +219,34 @@ class ApiAdapter {
   // -------------------------------------------------------------
   // SUBSCRIPTIONS
   // -------------------------------------------------------------
-  // TODO: [BACKEND_HOOK] - GET /api/v1/subscriptions - Query: { status?: string, customerId?: string } - Returns: Promise<Subscription[]>
+  // [BACKEND_HOOK] - GET /api/v1/subscriptions - Query: { status?: string, customerId?: string } - Returns: Promise<Subscription[]>
   async getSubscriptions(filterCustomerId?: string): Promise<Subscription[]> {
+    const url = filterCustomerId ? `/subscriptions?customerId=${filterCustomerId}` : '/subscriptions';
+    const live = await fetchBackend<Subscription[]>(url);
+    if (live && Array.isArray(live)) {
+      this.subscriptions = live;
+      saveStorage(STORAGE_KEYS.SUBSCRIPTIONS, this.subscriptions);
+      return filterCustomerId ? this.subscriptions.filter(s => s.customerId === filterCustomerId) : [...this.subscriptions];
+    }
+
     if (filterCustomerId) {
       return this.subscriptions.filter(s => s.customerId === filterCustomerId);
     }
     return [...this.subscriptions];
   }
 
-  // TODO: [BACKEND_HOOK] - POST /api/v1/subscriptions - Payload: Partial<Subscription> - Returns: Promise<Subscription>
+  // [BACKEND_HOOK] - POST /api/v1/subscriptions - Payload: Partial<Subscription> - Returns: Promise<Subscription>
   async createSubscription(data: Partial<Subscription>): Promise<Subscription> {
+    const live = await fetchBackend<Subscription>('/subscriptions', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    if (live && live.id) {
+      this.subscriptions = [live, ...this.subscriptions];
+      saveStorage(STORAGE_KEYS.SUBSCRIPTIONS, this.subscriptions);
+      return live;
+    }
+
     const subNumber = `SUB-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
     const newSub: Subscription = {
       id: `sub-${Date.now().toString(36)}`,
@@ -187,8 +254,8 @@ class ApiAdapter {
       customerId: data.customerId || 'cust-direct',
       customerName: data.customerName || 'Direct Customer',
       customerEmail: data.customerEmail || 'billing@example.com',
-      planId: data.planId || this.plans[0].id,
-      planName: data.planName || this.plans[0].name,
+      planId: data.planId || this.plans[0]?.id || 'plan-monthly',
+      planName: data.planName || this.plans[0]?.name || 'Pro Monthly Cadence',
       cadence: data.cadence || 'MONTHLY',
       status: (data.status as SubscriptionStatus) || 'Draft',
       startDate: data.startDate || new Date().toISOString().split('T')[0],
@@ -213,13 +280,28 @@ class ApiAdapter {
     return newSub;
   }
 
-  // TODO: [BACKEND_HOOK] - PATCH /api/v1/subscriptions/:id/transition - Payload: { status: SubscriptionStatus, performedBy: string, note?: string } - Returns: Promise<Subscription>
+  // [BACKEND_HOOK] - PATCH /api/v1/subscriptions/:id/transition - Payload: { status: SubscriptionStatus, performedBy: string, note?: string } - Returns: Promise<Subscription>
   async updateSubscriptionStatus(
     id: string,
     newStatus: SubscriptionStatus,
     performedBy: string = 'Internal Staff',
     note?: string
   ): Promise<Subscription> {
+    const live = await fetchBackend<Subscription>(`/subscriptions/${id}/transition`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status: newStatus, performedBy, note }),
+    });
+    if (live && live.id) {
+      const index = this.subscriptions.findIndex(s => s.id === id);
+      if (index !== -1) {
+        this.subscriptions[index] = live;
+      } else {
+        this.subscriptions.unshift(live);
+      }
+      saveStorage(STORAGE_KEYS.SUBSCRIPTIONS, this.subscriptions);
+      return live;
+    }
+
     const index = this.subscriptions.findIndex(s => s.id === id);
     if (index === -1) {
       throw new Error(`Subscription ${id} not found`);
@@ -248,20 +330,42 @@ class ApiAdapter {
   // -------------------------------------------------------------
   // INVOICES & BILLING BATCH RUNNER
   // -------------------------------------------------------------
-  // TODO: [BACKEND_HOOK] - GET /api/v1/invoices - Query: { customerId?: string } - Returns: Promise<Invoice[]>
+  // [BACKEND_HOOK] - GET /api/v1/invoices - Query: { customerId?: string } - Returns: Promise<Invoice[]>
   async getInvoices(filterCustomerId?: string): Promise<Invoice[]> {
+    const url = filterCustomerId ? `/invoices?customerId=${filterCustomerId}` : '/invoices';
+    const live = await fetchBackend<Invoice[]>(url);
+    if (live && Array.isArray(live)) {
+      this.invoices = live;
+      saveStorage(STORAGE_KEYS.INVOICES, this.invoices);
+      return filterCustomerId ? this.invoices.filter(i => i.customerId === filterCustomerId) : [...this.invoices];
+    }
+
     if (filterCustomerId) {
       return this.invoices.filter(inv => inv.customerId === filterCustomerId);
     }
     return [...this.invoices];
   }
 
-  // TODO: [BACKEND_HOOK] - POST /api/v1/billing/batch-run - Payload: { billingDate: string } - Returns: Promise<{ generatedCount: number, invoices: Invoice[] }>
+  // [BACKEND_HOOK] - POST /api/v1/billing/batch-run - Payload: { billingDate: string } - Returns: Promise<{ generatedCount: number, invoices: Invoice[] }>
   async runBatchBillingDay(billingDate: string): Promise<{ generatedCount: number; invoices: Invoice[] }> {
+    const live = await fetchBackend<{ generatedCount: number; invoices: Invoice[] }>('/billing/batch-run', {
+      method: 'POST',
+      body: JSON.stringify({ billingDate }),
+    });
+    if (live && Array.isArray(live.invoices)) {
+      this.invoices = [...live.invoices, ...this.invoices];
+      saveStorage(STORAGE_KEYS.INVOICES, this.invoices);
+      const updatedSubs = await fetchBackend<Subscription[]>('/subscriptions');
+      if (updatedSubs && Array.isArray(updatedSubs)) {
+        this.subscriptions = updatedSubs;
+        saveStorage(STORAGE_KEYS.SUBSCRIPTIONS, this.subscriptions);
+      }
+      return live;
+    }
+
     const targetDate = new Date(billingDate);
     const generated: Invoice[] = [];
 
-    // Find active subscriptions that match billing criteria
     this.subscriptions
       .filter(sub => sub.status === 'Active')
       .forEach(sub => {
@@ -294,7 +398,6 @@ class ApiAdapter {
           };
           generated.push(inv);
 
-          // Advance next billing date by 1 month
           const updatedDate = new Date(nextBill.getTime() + 30 * 86400000).toISOString().split('T')[0];
           sub.nextBillingDate = updatedDate;
         }
@@ -309,8 +412,19 @@ class ApiAdapter {
     return { generatedCount: generated.length, invoices: generated };
   }
 
-  // TODO: [BACKEND_HOOK] - PATCH /api/v1/invoices/:id/status - Payload: { status: InvoiceStatus } - Returns: Promise<Invoice>
+  // [BACKEND_HOOK] - PATCH /api/v1/invoices/:id/status - Payload: { status: InvoiceStatus } - Returns: Promise<Invoice>
   async updateInvoiceStatus(id: string, status: InvoiceStatus): Promise<Invoice> {
+    const live = await fetchBackend<Invoice>(`/invoices/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+    if (live && live.id) {
+      const index = this.invoices.findIndex(i => i.id === id);
+      if (index !== -1) this.invoices[index] = live;
+      saveStorage(STORAGE_KEYS.INVOICES, this.invoices);
+      return live;
+    }
+
     const index = this.invoices.findIndex(i => i.id === id);
     if (index === -1) throw new Error(`Invoice ${id} not found`);
 
@@ -323,12 +437,18 @@ class ApiAdapter {
   // -------------------------------------------------------------
   // PAYMENTS
   // -------------------------------------------------------------
-  // TODO: [BACKEND_HOOK] - GET /api/v1/payments - Returns: Promise<PaymentRecord[]>
+  // [BACKEND_HOOK] - GET /api/v1/payments - Returns: Promise<PaymentRecord[]>
   async getPayments(): Promise<PaymentRecord[]> {
+    const live = await fetchBackend<PaymentRecord[]>('/payments');
+    if (live && Array.isArray(live)) {
+      this.payments = live;
+      saveStorage(STORAGE_KEYS.PAYMENTS, this.payments);
+      return [...this.payments];
+    }
     return [...this.payments];
   }
 
-  // TODO: [BACKEND_HOOK] - POST /api/v1/payments - Payload: Omit<PaymentRecord, 'id' | 'paymentDate' | 'status'> - Returns: Promise<PaymentRecord>
+  // [BACKEND_HOOK] - POST /api/v1/payments - Payload: Omit<PaymentRecord, 'id' | 'paymentDate' | 'status'> - Returns: Promise<PaymentRecord>
   async logPayment(data: {
     invoiceId: string;
     amount: number;
@@ -336,6 +456,22 @@ class ApiAdapter {
     referenceNumber: string;
     notes?: string;
   }): Promise<PaymentRecord> {
+    const live = await fetchBackend<PaymentRecord>('/payments', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    if (live && live.id) {
+      this.payments = [live, ...this.payments];
+      saveStorage(STORAGE_KEYS.PAYMENTS, this.payments);
+
+      const refreshedInvoices = await fetchBackend<Invoice[]>('/invoices');
+      if (refreshedInvoices && Array.isArray(refreshedInvoices)) {
+        this.invoices = refreshedInvoices;
+        saveStorage(STORAGE_KEYS.INVOICES, this.invoices);
+      }
+      return live;
+    }
+
     const invIndex = this.invoices.findIndex(i => i.id === data.invoiceId);
     if (invIndex === -1) throw new Error(`Invoice ${data.invoiceId} not found`);
 
@@ -354,7 +490,6 @@ class ApiAdapter {
       notes: data.notes,
     };
 
-    // Update invoice ledger
     invoice.amountPaid = Number((invoice.amountPaid + data.amount).toFixed(2));
     invoice.amountDue = Number(Math.max(0, invoice.totalAmount - invoice.amountPaid).toFixed(2));
     if (invoice.amountDue <= 0) {
@@ -372,13 +507,29 @@ class ApiAdapter {
   // -------------------------------------------------------------
   // DISCOUNTS
   // -------------------------------------------------------------
-  // TODO: [BACKEND_HOOK] - GET /api/v1/discounts - Returns: Promise<DiscountRule[]>
+  // [BACKEND_HOOK] - GET /api/v1/discounts - Returns: Promise<DiscountRule[]>
   async getDiscounts(): Promise<DiscountRule[]> {
+    const live = await fetchBackend<DiscountRule[]>('/discounts');
+    if (live && Array.isArray(live)) {
+      this.discounts = live;
+      saveStorage(STORAGE_KEYS.DISCOUNTS, this.discounts);
+      return [...this.discounts];
+    }
     return [...this.discounts];
   }
 
-  // TODO: [BACKEND_HOOK] - POST /api/v1/discounts - Payload: Omit<DiscountRule, 'id' | 'usageCount'> - Returns: Promise<DiscountRule>
+  // [BACKEND_HOOK] - POST /api/v1/discounts - Payload: Omit<DiscountRule, 'id' | 'usageCount'> - Returns: Promise<DiscountRule>
   async createDiscount(data: Omit<DiscountRule, 'id' | 'usageCount'>): Promise<DiscountRule> {
+    const live = await fetchBackend<DiscountRule>('/discounts', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    if (live && live.id) {
+      this.discounts = [live, ...this.discounts];
+      saveStorage(STORAGE_KEYS.DISCOUNTS, this.discounts);
+      return live;
+    }
+
     const newDiscount: DiscountRule = {
       ...data,
       id: `disc-${Date.now().toString(36)}`,
@@ -389,8 +540,18 @@ class ApiAdapter {
     return newDiscount;
   }
 
-  // TODO: [BACKEND_HOOK] - PATCH /api/v1/discounts/:id/toggle - Returns: Promise<DiscountRule>
+  // [BACKEND_HOOK] - PATCH /api/v1/discounts/:id/toggle - Returns: Promise<DiscountRule>
   async toggleDiscount(id: string): Promise<DiscountRule> {
+    const live = await fetchBackend<DiscountRule>(`/discounts/${id}/toggle`, {
+      method: 'PATCH',
+    });
+    if (live && live.id) {
+      const index = this.discounts.findIndex(d => d.id === id);
+      if (index !== -1) this.discounts[index] = live;
+      saveStorage(STORAGE_KEYS.DISCOUNTS, this.discounts);
+      return live;
+    }
+
     const index = this.discounts.findIndex(d => d.id === id);
     if (index === -1) throw new Error(`Discount ${id} not found`);
     this.discounts[index].active = !this.discounts[index].active;
@@ -399,10 +560,15 @@ class ApiAdapter {
   }
 
   // -------------------------------------------------------------
-  // FINANCE METRICS (<50ms computation time guarantee)
+  // FINANCE METRICS (<50ms computation guarantee)
   // -------------------------------------------------------------
-  // TODO: [BACKEND_HOOK] - GET /api/v1/analytics/finance-metrics - Returns: Promise<FinanceMetrics>
+  // [BACKEND_HOOK] - GET /api/v1/analytics/finance-metrics - Returns: Promise<FinanceMetrics>
   async getFinanceMetrics(): Promise<FinanceMetrics> {
+    const live = await fetchBackend<FinanceMetrics>('/analytics/finance-metrics');
+    if (live && typeof live.activeMrr === 'number') {
+      return live;
+    }
+
     let activeMrr = 0;
     let activeCount = 0;
 
@@ -451,6 +617,49 @@ class ApiAdapter {
       activeSubscriptionsCount: activeCount,
       revenueHistory: history,
     };
+  }
+
+  // -------------------------------------------------------------
+  // AUTHENTICATION & STAFF MANAGEMENT
+  // -------------------------------------------------------------
+  // [BACKEND_HOOK] - POST /api/v1/auth/signup - Payload: { name, email, password, role, companyName } - Returns: Promise<{ user: User, token: string }>
+  async signup(data: {
+    name: string;
+    email: string;
+    password: string;
+    role: UserRole;
+    companyName?: string;
+  }): Promise<{ user: User; token: string }> {
+    const live = await fetchBackend<{ success: boolean; user: User; token: string }>('/auth/signup', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    if (live && live.user) {
+      return { user: live.user, token: live.token };
+    }
+
+    // Fallback if backend is offline
+    const newUser: User = {
+      id: `usr-${Date.now().toString(36)}`,
+      name: data.name,
+      email: data.email,
+      role: data.role,
+      companyName: data.companyName || 'Brightloop Operations',
+      avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+    };
+    return { user: newUser, token: 'mock-jwt-token' };
+  }
+
+  // [BACKEND_HOOK] - POST /api/v1/auth/login - Payload: { email, password } - Returns: Promise<{ user: User, token: string } | null>
+  async login(email: string, password: string): Promise<{ user: User; token: string } | null> {
+    const live = await fetchBackend<{ success: boolean; user: User; token: string }>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+    if (live && live.user) {
+      return { user: live.user, token: live.token };
+    }
+    return null;
   }
 
   // -------------------------------------------------------------

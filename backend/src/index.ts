@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { env } from './config/env.js';
 import { authenticateToken } from './middleware/authMiddleware.js';
+import { dataStore } from './repository/dataStore.js';
 
 import authRoutes from './routes/auth.routes.js';
 import catalogRoutes from './routes/catalog.routes.js';
@@ -72,7 +73,7 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 
 // Start Server if not imported by test runner
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(env.PORT, () => {
+  app.listen(env.PORT, async () => {
     console.log(
       '\x1b[32m%s\x1b[0m',
       `🚀 Brightloop Backend Engine running on http://localhost:${env.PORT}`
@@ -85,6 +86,7 @@ if (process.env.NODE_ENV !== 'test') {
       '\x1b[35m%s\x1b[0m',
       `🔗 1:1 Matching Frontend API Hooks: http://localhost:${env.PORT}/api/v1`
     );
+    await dataStore.init();
   });
 }
 
