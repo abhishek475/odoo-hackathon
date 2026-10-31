@@ -1,10 +1,18 @@
 # Adithya — Brightloop Frontend & Portal
 
-My assignment is in [my-work.md](my-work.md). Shared messages go in
-[team-chat.txt](team-chat.txt) on **adithya-branch**. Questions use `[QUESTION 101][Name]`;
-requests use `[TASK 102][Name]`. Put the full question/request on following lines.
-Use a new unique ID for each message. Codex appends acknowledgements and answers
-when the owner has enabled the local supervisor. Never include secrets.
+**Conversation ID: ADITHYA-BRIGHTLOOP-01**
+
+Open [team-chat.txt](team-chat.txt) on **adithya-branch**, append your message at the
+bottom in normal English, and commit the edit. No task IDs, tags or special format
+are needed. Adding your name is helpful, but optional. For example:
+
+> Sam: We are using React, TypeScript and Tailwind. Please start with the staff layout.
+
+Codex assigns a message ID, remembers recent conversation context and replies in
+the same file. You can ask follow-up questions normally. Keep previous messages
+and replies, and never include passwords or secrets. It polls roughly every two
+minutes; replies wait until the current job finishes. Older tagged messages still
+work for anyone already using them.
 
 Completed milestones include per-file explanations, design decisions, integration
 instructions, exact checks/results and limitations in `reports/`. Ask follow-up
@@ -26,7 +34,8 @@ Current status: the owner has enabled the background worker and GitHub chat.
 It polls this channel every 120 seconds and answers questions after the current job.
 A real startup inspection confirmed that application source, the team’s frontend
 stack, API contracts and application validation commands are still missing.
-Until those prerequisites are supplied, the worker uses read-only inspection and
-cannot publish application code or claim feature completion. WORK-001 is blocked;
+Stack/context questions receive replies without unnecessary edits. When the team
+explicitly confirms the stack and requests implementation, the worker can develop
+scoped frontend changes; publication still requires real validation gates to pass. WORK-001 is blocked;
 later milestones remain queued. No application checks or performance targets have
 been verified. See [activation report](reports/activation.md).

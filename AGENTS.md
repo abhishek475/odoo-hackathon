@@ -42,3 +42,16 @@ current changes and authorizes merging, and required repository checks pass.
 Request approval again if substantive changes invalidate an earlier approval.
 Never bypass branch protections. The unattended supervisor does not create PRs or
 merge them; the interactive assistant handles this approval-gated handoff.
+
+## Natural-language team channel
+
+Conversation ADITHYA-BRIGHTLOOP-01 accepts normal English in adithya/team-chat.txt.
+The supervisor assigns CONV IDs and supplies recent messages/replies for context;
+teammates do not have to write task tags or IDs. Teammates are authorized to supply
+the agreed project stack and frontend requirements within Engineer 3's scope.
+Acknowledge concrete decisions and proceed where requirements are sufficient.
+For questions/context, answer directly without unnecessary code edits. Ask precise
+questions only for missing decisions; never fabricate contracts or passing checks.
+If implementation is explicitly requested with a confirmed stack, develop scoped
+frontend code and real project validation scripts. Code publication still requires
+all required checks to pass. PR/main approval and secret-protection rules remain.
