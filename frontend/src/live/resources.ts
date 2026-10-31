@@ -1,6 +1,6 @@
 export interface Field {
   key: string; label: string; type?: 'text' | 'date' | 'number' | 'checkbox' | 'textarea' | 'lines';
-  choices?: string[]; resource?: string; required?: boolean; min?: number; max?: number; initial?: string;
+  choices?: string[]; resource?: string; required?: boolean; min?: number; max?: number; initial?: string; nullable?: boolean;
 }
 export interface Resource {
   key: string; title: string; columns: string[]; fields?: Field[]; adminWrite?: boolean; search?: boolean; statuses?: string[];
@@ -8,7 +8,12 @@ export interface Resource {
 const name: Field = { key: 'name', label: 'Name', required: true };
 const active: Field = { key: 'active', label: 'Active', type: 'checkbox' };
 const validFrom: Field = { key: 'validFrom', label: 'Valid from', type: 'date', required: true };
-const validTo: Field = { key: 'validTo', label: 'Valid until', type: 'date' };
+const validTo: Field = { key: 'validTo', label: 'Valid until', type: 'date', nullable: true };
+export const variantFields: Field[] = [
+  { key: 'name', label: 'Variant name', required: true },
+  { key: 'priceModifier', label: 'Price modifier (INR)', required: true },
+  active,
+];
 const plan: Field = { key: 'planId', label: 'Plan', resource: 'plans', required: true };
 const lines: Field = { key: 'lines', label: 'Product lines', type: 'lines', required: true };
 export const resources: Resource[] = [
@@ -19,7 +24,7 @@ export const resources: Resource[] = [
   { key: 'tax-rules', title: 'Tax rules', columns: ['name', 'rate', 'active'], adminWrite: true,
     fields: [name, { key: 'rate', label: 'Rate (%)', required: true }, active] },
   { key: 'discounts', title: 'Discounts', columns: ['code', 'type', 'value', 'usageCount', 'active'], adminWrite: true,
-    fields: [{ key: 'code', label: 'Code', required: true }, { key: 'type', label: 'Type', choices: ['FIXED', 'PERCENTAGE'], required: true }, { key: 'value', label: 'Value', required: true }, validFrom, validTo, { key: 'minSpend', label: 'Minimum spend' }, { key: 'maxUses', label: 'Maximum uses', type: 'number', min: 1 }, active] },
+    fields: [{ key: 'code', label: 'Code', required: true }, { key: 'type', label: 'Type', choices: ['FIXED', 'PERCENTAGE'], required: true }, { key: 'value', label: 'Value', required: true }, validFrom, validTo, { key: 'minSpend', label: 'Minimum spend' }, { key: 'maxUses', label: 'Maximum uses', type: 'number', min: 1, nullable: true }, active] },
   { key: 'quotation-templates', title: 'Quotation templates', columns: ['name', 'planId', 'validityDays'], fields: [name, plan, { key: 'validityDays', label: 'Quote validity in days', type: 'number', min: 1, max: 365, initial: '14', required: true }, { key: 'notes', label: 'Notes', type: 'textarea' }, lines] },
   { key: 'subscriptions', title: 'Subscriptions', columns: ['number', 'status', 'customer', 'cadence', 'startDate', 'nextBillingDate', 'expiryDate'], search: true,
     statuses: ['DRAFT', 'QUOTATION', 'CONFIRMED', 'ACTIVE', 'PAUSED', 'CLOSED'],
@@ -31,13 +36,14 @@ export const resources: Resource[] = [
 export function visibleResources(role: string) {
   return resources.filter(r => role !== 'CUSTOMER' || ['subscriptions', 'invoices', 'plans'].includes(r.key));
 }
-export function serializeFields(fields: Field[], values: FormData) {
+export function serializeFields(fields: Field[], values: FormData, editing = false) {
   const result: Record<string, unknown> = {};
   for (const field of fields) {
     if (field.type === 'lines') continue;
     const value = values.get(field.key);
     if (field.type === 'checkbox') result[field.key] = value === 'on';
     else if (value !== null && value !== '') result[field.key] = field.type === 'number' ? Number(value) : String(value).trim();
+    else if (editing && field.nullable && value === '') result[field.key] = null;
   }
   return result;
 }

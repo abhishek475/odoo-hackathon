@@ -1,6 +1,6 @@
 import React, { FormEvent, useEffect, useRef, useState } from 'react';
 import { liveApi as api, type Viewer, type RecordData, type Page } from '../services/liveApi';
-import { type Field, type Resource, visibleResources, serializeFields } from './resources';
+import { type Field, type Resource, visibleResources, serializeFields, variantFields } from './resources';
 
 const inputClass = 'w-full rounded border border-zinc-700 bg-zinc-900 p-2 text-zinc-100';
 const buttonClass = 'rounded border border-cyan-800 bg-cyan-950 px-3 py-2 text-sm text-cyan-100 hover:bg-cyan-900 disabled:opacity-40';
@@ -93,7 +93,7 @@ function Editor({ title, fields, initial, save, cancel }: { title: string; field
   const [templateId, setTemplateId] = useState('');
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault(); setError(''); setBusy(true); setDone(false);
-    const body = serializeFields(fields, new FormData(e.currentTarget));
+    const body = serializeFields(fields, new FormData(e.currentTarget), Boolean(initial));
     if (fields.some(f => f.type === 'lines') && !templateId) {
       if (!lines.length || lines.some(l => !l.productId || !Number.isInteger(l.quantity) || l.quantity < 1)) { setError('Add at least one product with a positive whole quantity.'); setBusy(false); return; }
       body.lines = lines.map(({ productId, variantId, taxRuleId, quantity }) => ({ productId, quantity, ...(variantId ? { variantId } : {}), ...(taxRuleId ? { taxRuleId } : {}) }));
@@ -175,6 +175,7 @@ function Detail({ resource, id, viewer, changed, close }: { resource: Resource; 
   const [busy, setBusy] = useState(false);
   const [printHtml, setPrintHtml] = useState('');
   const [editing, setEditing] = useState(false);
+  const [editingVariant, setEditingVariant] = useState<RecordData>();
   const frame = useRef<HTMLIFrameElement>(null);
   const paymentAttempt = useRef<{ signature: string; key: string }>();
   const load = async () => setItem(await api.get<RecordData>(`/${resource.key}/${id}`));
@@ -212,7 +213,14 @@ function Detail({ resource, id, viewer, changed, close }: { resource: Resource; 
         else await api.patch(`/${resource.key}/${id}`, body);
         await load(); changed(); setEditing(false);
       }} />}
-      {resource.key === 'products' && viewer.role === 'ADMIN' && <Editor title="Add variant" fields={[{ key: 'name', label: 'Variant name', required: true }, { key: 'priceModifier', label: 'Price modifier (INR)', required: true }]} save={async body => { await api.post(`/products/${id}/variants`, body); await load(); changed(); }} />}
+      {resource.key === 'products' && viewer.role === 'ADMIN' && <>
+        <div className="flex flex-wrap gap-2">{((item.variants as RecordData[]) ?? []).map(variant => <button key={variant.id} className={buttonClass} onClick={() => setEditingVariant(variant)}>Edit variant {display(variant.name)}</button>)}</div>
+        {editingVariant && <Editor key={editingVariant.id} title={`Edit variant ${display(editingVariant.name)}`} fields={variantFields} initial={editingVariant} cancel={() => setEditingVariant(undefined)} save={async body => {
+          await api.patch(`/variants/${encodeURIComponent(editingVariant.id)}`, body);
+          await load(); changed(); setEditingVariant(undefined); setInfo('Variant saved on the server.');
+        }} />}
+        <Editor title="Add variant" fields={variantFields} save={async body => { await api.post(`/products/${id}/variants`, body); await load(); changed(); }} />
+      </>}
       {resource.key === 'subscriptions' && <>
         {staff && status === 'ACTIVE' && <Editor title="Generate invoice for the next due period" fields={[{ key: 'periodStart', label: 'Period start (must match next billing date)', type: 'date', required: true, initial: String(item.nextBillingDate).slice(0, 10) }]} save={async body => { await api.post(`/subscriptions/${id}/invoices`, body); await load(); changed(); }} />}
         {plan?.allowRenew && ['ACTIVE', 'CLOSED'].includes(status) ? <Editor title="Renew subscription" fields={[{ key: 'newExpiryDate', label: 'New expiry date', type: 'date', required: true }]} save={async body => { await api.post(`/subscriptions/${id}/renew`, body); await load(); changed(); }} /> : null}
@@ -234,6 +242,8 @@ function ResourcePage({ resource, viewer }: { resource: Resource; viewer: Viewer
   const [page, setPage] = useState(1), [search, setSearch] = useState(''), [status, setStatus] = useState('');
   const [error, setError] = useState(''), [loading, setLoading] = useState(false), [revision, setRevision] = useState(0);
   const [creating, setCreating] = useState(false), [selected, setSelected] = useState<string>();
+  const [editingRecord, setEditingRecord] = useState<RecordData>();
+  const [info, setInfo] = useState('');
   useEffect(() => {
     let active = true; setLoading(true); setError(''); setResult(undefined);
     const q = new URLSearchParams({ page: String(page), pageSize: '20' }); if (search) q.set('search', search); if (status) q.set('status', status);
@@ -242,11 +252,17 @@ function ResourcePage({ resource, viewer }: { resource: Resource; viewer: Viewer
   }, [resource.key, page, search, status, revision]);
   const canWrite = resource.fields && viewer.role !== 'CUSTOMER' && (!resource.adminWrite || viewer.role === 'ADMIN');
   const hasDetail = ['products', 'plans', 'quotation-templates', 'subscriptions', 'invoices'].includes(resource.key);
+  const canEditRow = viewer.role === 'ADMIN' && ['tax-rules', 'discounts'].includes(resource.key);
   return <section className="space-y-5"><div className="flex flex-wrap items-center justify-between gap-3"><h1 className="text-2xl font-bold">{resource.title}</h1><div className="flex gap-3"><button className={buttonClass} onClick={() => setRevision(v => v + 1)} disabled={loading}>Refresh</button>{canWrite && <button className={buttonClass} onClick={() => setCreating(v => !v)}>Create</button>}</div></div>
     <div className="flex flex-wrap gap-3">{resource.search && <label>Search<input className={inputClass} value={search} onChange={e => { setPage(1); setSearch(e.target.value); }} maxLength={120} /></label>}{resource.statuses && <label>Status<select className={inputClass} value={status} onChange={e => { setPage(1); setStatus(e.target.value); }}><option value="">All statuses</option>{resource.statuses.map(s => <option key={s}>{s}</option>)}</select></label>}</div>
     {creating && resource.fields && <Editor title={`Create ${resource.title}`} fields={resource.fields} cancel={() => setCreating(false)} save={async body => { await api.post(`/${resource.key}`, body); setCreating(false); setPage(1); setRevision(v => v + 1); }} />}
+    {editingRecord && canEditRow && resource.fields && <Editor key={editingRecord.id} title={`Edit ${resource.title}`} fields={resource.fields} initial={editingRecord} cancel={() => setEditingRecord(undefined)} save={async body => {
+      await api.patch(`/${resource.key}/${encodeURIComponent(editingRecord.id)}`, body);
+      setEditingRecord(undefined); setRevision(v => v + 1); setInfo('Changes saved on the server.');
+    }} />}
+    {info && <Notice text={info} />}
     {error && <Notice error text={error} />}{loading && <p role="status">Loading records…</p>}
-    {result && <><div className="overflow-x-auto rounded border border-zinc-800"><table className="w-full text-left text-sm"><caption className="p-3 text-left text-zinc-400">{result.pagination.total} records · Page {page} of {Math.max(1, result.pagination.pages)}{resource.key === 'invoices' ? ' · Amounts in INR' : ''}</caption><thead className="bg-zinc-900"><tr>{resource.columns.map(c => <th className="p-3" key={c}>{label(c)}</th>)}{hasDetail && <th className="p-3">Details</th>}</tr></thead><tbody>{result.data.map(row => <tr key={row.id} className="border-t border-zinc-800">{resource.columns.map(c => <td className="p-3" key={c}>{display(row[c])}</td>)}{hasDetail && <td className="p-3"><button className="text-cyan-300 underline" onClick={() => setSelected(row.id)}>Open {display(row.number ?? row.name)}</button></td>}</tr>)}</tbody></table>{result.data.length === 0 && <p className="p-5 text-zinc-400">No records match your filters.</p>}</div>
+    {result && <><div className="overflow-x-auto rounded border border-zinc-800"><table className="w-full text-left text-sm"><caption className="p-3 text-left text-zinc-400">{result.pagination.total} records · Page {page} of {Math.max(1, result.pagination.pages)}{resource.key === 'invoices' ? ' · Amounts in INR' : ''}</caption><thead className="bg-zinc-900"><tr>{resource.columns.map(c => <th className="p-3" key={c}>{label(c)}</th>)}{hasDetail && <th className="p-3">Details</th>}{canEditRow && <th className="p-3">Actions</th>}</tr></thead><tbody>{result.data.map(row => <tr key={row.id} className="border-t border-zinc-800">{resource.columns.map(c => <td className="p-3" key={c}>{display(row[c])}</td>)}{hasDetail && <td className="p-3"><button className="text-cyan-300 underline" onClick={() => setSelected(row.id)}>Open {display(row.number ?? row.name)}</button></td>}{canEditRow && <td className="p-3"><button className="text-cyan-300 underline" onClick={() => { setEditingRecord(row); setInfo(''); }}>Edit {display(row.name ?? row.code)}</button></td>}</tr>)}</tbody></table>{result.data.length === 0 && <p className="p-5 text-zinc-400">No records match your filters.</p>}</div>
       <div className="flex gap-4"><button className={buttonClass} disabled={page <= 1 || loading} onClick={() => setPage(p => p - 1)}>Previous</button><button className={buttonClass} disabled={page >= result.pagination.pages || loading} onClick={() => setPage(p => p + 1)}>Next</button></div></>}
     {selected && <Detail key={`${resource.key}/${selected}`} resource={resource} id={selected} viewer={viewer} close={() => setSelected(undefined)} changed={() => setRevision(v => v + 1)} />}
   </section>;

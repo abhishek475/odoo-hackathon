@@ -13,4 +13,11 @@ describe('Connected forms', () => {
     const data = new FormData(); data.set('paymentTermsDays', '0'); data.set('validTo', '');
     expect(serializeFields([{ key: 'paymentTermsDays', label: '', type: 'number' }, { key: 'validTo', label: '', type: 'date' }], data)).toEqual({ paymentTermsDays: 0 });
   });
+  it('clears nullable discount limits on edit without converting a zero value to null', () => {
+    const data = new FormData(); data.set('validTo', ''); data.set('maxUses', ''); data.set('value', '0');
+    const fields = resources.find(r => r.key === 'discounts')!.fields!;
+    expect(serializeFields(fields, data, true)).toMatchObject({ validTo: null, maxUses: null, value: '0', active: false });
+    expect(serializeFields(fields, data)).not.toHaveProperty('maxUses');
+    expect(serializeFields(fields, data)).not.toHaveProperty('validTo');
+  });
 });
