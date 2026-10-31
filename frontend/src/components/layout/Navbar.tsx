@@ -57,7 +57,7 @@ export const Navbar: React.FC = () => {
           <Server className="w-3.5 h-3.5 text-cyan-400" />
           <span>Active Rows: <strong className="text-zinc-200">{subscriptions.length.toLocaleString()}</strong></span>
         </div>
-
+        
         {benchmarkStats && (
           <div className="flex items-center gap-2 text-xs font-mono text-emerald-400 border-l border-zinc-800 pl-3">
             <Sparkles className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />

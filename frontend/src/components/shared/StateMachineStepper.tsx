@@ -34,7 +34,7 @@ export const StateMachineStepper: React.FC<StateMachineStepperProps> = ({
 
       <div className="flex items-center justify-between relative">
         <div className="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-[2px] bg-zinc-800 -z-0" />
-
+        
         {PRIMARY_STEPS.map((step, idx) => {
           const isPassed = !isPaused && currentIndex > idx;
           const isCurrent = !isPaused && currentStatus === step;
