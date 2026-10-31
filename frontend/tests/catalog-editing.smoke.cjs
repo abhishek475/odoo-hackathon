@@ -49,7 +49,7 @@ async function run() {
         return json({ data: target });
       }
       if (path === '/products/product-one') return json({ data: product });
-      const rows = { '/tax-rules': [tax], '/discounts': [discount], '/products': [product] }[path];
+      const rows = { '/tax-rules': [tax], '/discounts': [discount], '/products': [product], '/customers': [] }[path];
       // The selected API has no GET tax-rules/:id or discounts/:id; edit the listed record.
       assert.ok(rows, `Unexpected request: ${req.method()} ${path}`);
       return json({ data: rows, pagination: { page: 1, pageSize: 20, total: rows.length, pages: 1 } });

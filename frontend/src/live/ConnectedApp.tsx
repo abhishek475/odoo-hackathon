@@ -158,12 +158,31 @@ function Finance() {
   const [summary, setSummary] = useState<Record<string, unknown>>();
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const load = async (query = '') => { setBusy(true); setError(''); try { setSummary(await api.get(`/reports/summary${query}`)); } catch (e) { setSummary(undefined); setError(message(e)); } finally { setBusy(false); } };
+  const [query, setQuery] = useState('');
+  const [exporting, setExporting] = useState(false);
+  const loadVersion = useRef(0);
+  const load = async (nextQuery = '') => {
+    const version = ++loadVersion.current; setBusy(true); setError(''); setQuery(nextQuery); setSummary(undefined);
+    try { const result = await api.get<Record<string, unknown>>(`/reports/summary${nextQuery}`); if (version === loadVersion.current) setSummary(result); }
+    catch (e) { if (version === loadVersion.current) setError(message(e)); }
+    finally { if (version === loadVersion.current) setBusy(false); }
+  };
+  const exportCsv = async () => {
+    setExporting(true); setError('');
+    try {
+      const blob = await api.invoiceCsv(query);
+      const url = URL.createObjectURL(blob), anchor = document.createElement('a');
+      anchor.href = url; anchor.download = 'brightloop-invoices.csv'; document.body.append(anchor); anchor.click(); anchor.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) { setError(message(e)); } finally { setExporting(false); }
+  };
   useEffect(() => { void load(); }, []);
   return <section className="space-y-5"><h1 className="text-2xl font-bold">Finance overview</h1>
-    <form className="flex flex-wrap items-end gap-3" onSubmit={e => { e.preventDefault(); const f = new FormData(e.currentTarget); const q = new URLSearchParams(); for (const k of ['from', 'to']) if (f.get(k)) q.set(k, String(f.get(k))); void load(`?${q}`); }}>
-      <label>From<input className={inputClass} name="from" type="date" /></label><label>To<input className={inputClass} name="to" type="date" /></label><button className={buttonClass} disabled={busy}>Update</button>
+    <form className="flex flex-wrap items-end gap-3" onSubmit={e => { e.preventDefault(); const f = new FormData(e.currentTarget); const q = new URLSearchParams(); for (const k of ['from', 'to', 'customerId']) if (f.get(k)) q.set(k, String(f.get(k))); void load(q.size ? `?${q}` : ''); }}>
+      <label>From<input className={inputClass} name="from" type="date" /></label><label>To<input className={inputClass} name="to" type="date" /></label><div>Customer (optional)<ReferenceSelect resource="customers" name="customerId" /></div><button className={buttonClass} disabled={busy || exporting}>Update</button>
     </form>{error && <Notice error text={error} />}{busy && <p role="status">Loading server metrics…</p>}
+    <button className={buttonClass} disabled={busy || exporting || !summary} onClick={() => void exportCsv()}>{exporting ? 'Downloading…' : 'Download invoice CSV'}</button>
+    <p className="text-sm text-zinc-400">The CSV uses the filters applied with Update.</p>
     {summary && <><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{['grossMrr', 'grossArr', 'overdueAmount', 'collectedPayments', 'activeSubscriptions', 'outstandingAmount', 'invoicedAmount', 'overdueInvoiceCount'].map(k => <div key={k} className="rounded-xl border border-zinc-800 bg-zinc-900 p-5"><p className="text-sm text-zinc-400">{label(k)}</p><p className="mt-2 text-2xl font-semibold">{display(summary[k])} {k.endsWith('Count') || k === 'activeSubscriptions' ? '' : display(summary.currency)}</p></div>)}</div><p className="text-sm text-zinc-400">{display((summary.scope as Record<string, unknown>)?.note)}</p></>}
   </section>;
 }
@@ -222,6 +241,16 @@ function Detail({ resource, id, viewer, changed, close }: { resource: Resource; 
         <Editor title="Add variant" fields={variantFields} save={async body => { await api.post(`/products/${id}/variants`, body); await load(); changed(); }} />
       </>}
       {resource.key === 'subscriptions' && <>
+        <section className="space-y-2"><h3 className="font-semibold">Assigned discounts</h3>
+          {Array.isArray(item.discounts) && item.discounts.length ? (item.discounts as { discountId: string; discount?: { code?: string } }[]).map(link => <div key={link.discountId} className="flex flex-wrap items-center gap-3 rounded border border-zinc-800 p-3">
+            <span>{link.discount?.code ?? link.discountId}</span>
+            {staff && <button className={buttonClass} disabled={busy} onClick={async () => {
+              setBusy(true); setError(''); setInfo('');
+              try { await api.removeSubscriptionDiscount(id, link.discountId); await load(); changed(); setInfo('Discount removed on the server.'); }
+              catch (e) { setError(message(e)); } finally { setBusy(false); }
+            }}>Remove discount {link.discount?.code ?? link.discountId}</button>}
+          </div>) : <p className="text-zinc-400">No discounts assigned.</p>}
+        </section>
         {staff && status === 'ACTIVE' && <Editor title="Generate invoice for the next due period" fields={[{ key: 'periodStart', label: 'Period start (must match next billing date)', type: 'date', required: true, initial: String(item.nextBillingDate).slice(0, 10) }]} save={async body => { await api.post(`/subscriptions/${id}/invoices`, body); await load(); changed(); }} />}
         {plan?.allowRenew && ['ACTIVE', 'CLOSED'].includes(status) ? <Editor title="Renew subscription" fields={[{ key: 'newExpiryDate', label: 'New expiry date', type: 'date', required: true }]} save={async body => { await api.post(`/subscriptions/${id}/renew`, body); await load(); changed(); }} /> : null}
         {staff && status !== 'CLOSED' && <Editor title="Apply a discount" fields={[{ key: 'discountId', label: 'Discount', resource: 'discounts', required: true }]} save={async body => { await api.post(`/subscriptions/${id}/discounts`, body); await load(); changed(); }} />}

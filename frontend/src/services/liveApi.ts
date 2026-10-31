@@ -15,7 +15,7 @@ export class LiveApi {
   constructor(readonly baseUrl = apiConfig.baseUrl ?? '/api', private transport: typeof fetch = fetch) {}
   setSession(session: Session | null) { this.session = session; }
   hasSession() { return Boolean(this.session); }
-  async request<T>(path: string, options: RequestInit = {}, retry = true): Promise<T> {
+  async request<T>(path: string, options: RequestInit = {}, retry = true, responseType: 'json' | 'blob' = 'json'): Promise<T> {
     const headers = new Headers(options.headers);
     if (options.body) headers.set('Content-Type', 'application/json');
     if (this.session) headers.set('Authorization', `Bearer ${this.session.access_token}`);
@@ -25,7 +25,7 @@ export class LiveApi {
     if (response.status === 401 && retry && this.session?.refresh_token && !path.startsWith('/auth/')) {
       this.refreshing ??= this.refresh().finally(() => { this.refreshing = null; });
       await this.refreshing;
-      return this.request<T>(path, options, false);
+      return this.request<T>(path, options, false, responseType);
     }
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
@@ -34,6 +34,7 @@ export class LiveApi {
       throw new ApiError(`${error?.message ?? `Request failed (${response.status})`}${fields ? `. ${fields}` : ''}`, response.status, error?.code ?? 'API_ERROR', error?.requestId);
     }
     if (response.status === 204) return undefined as T;
+    if (responseType === 'blob') return response.blob() as Promise<T>;
     return response.json() as Promise<T>;
   }
   async refresh() {
@@ -55,6 +56,10 @@ export class LiveApi {
     return result?.data as T;
   }
   async patch<T>(path: string, body: unknown) { return (await this.request<{ data: T }>(path, { method: 'PATCH', body: JSON.stringify(body) })).data; }
+  async removeSubscriptionDiscount(subscriptionId: string, discountId: string) {
+    await this.request<void>(`/subscriptions/${encodeURIComponent(subscriptionId)}/discounts/${encodeURIComponent(discountId)}`, { method: 'DELETE' });
+  }
+  async invoiceCsv(query = '') { return this.request<Blob>(`/reports/invoices.csv${query}`, {}, true, 'blob'); }
   async printInvoice(id: string) {
     // Fetch protected HTML with the current bearer token; isolate it from the application origin.
     const html = await this.requestText(`/invoices/${encodeURIComponent(id)}/print`);

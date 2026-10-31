@@ -51,4 +51,28 @@ describe('Connected API contract', () => {
     api.setSession({ access_token: 'old', refresh_token: 'refresh' });
     await expect(api.logout()).rejects.toThrow(); expect(api.hasSession()).toBe(false);
   });
+  it('removes only the selected assigned discount with bearer auth and accepts a 204', async () => {
+    const transport = vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status: 204 }));
+    const api = new LiveApi('/api', transport); api.setSession({ access_token: 'access', refresh_token: 'refresh' });
+    await api.removeSubscriptionDiscount('sub/one', 'discount/one');
+    expect(transport.mock.calls[0][0]).toBe('/api/subscriptions/sub%2Fone/discounts/discount%2Fone');
+    expect(transport.mock.calls[0][1]?.method).toBe('DELETE');
+    expect(new Headers(transport.mock.calls[0][1]?.headers).get('Authorization')).toBe('Bearer access');
+  });
+  it('refreshes CSV access and preserves the binary response and selected filters', async () => {
+    const transport = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(json({ error: { message: 'Expired' } }, 401))
+      .mockResolvedValueOnce(json({ data: { session: { access_token: 'new', refresh_token: 'next' } } }))
+      .mockResolvedValueOnce(new Response('number,total\r\nINV-1,100.00\r\n', { headers: { 'Content-Type': 'text/csv' } }));
+    const api = new LiveApi('/api', transport); api.setSession({ access_token: 'old', refresh_token: 'refresh' });
+    const blob = await api.invoiceCsv('?from=2026-10-01&customerId=customer-one');
+    expect(await blob.text()).toBe('number,total\r\nINV-1,100.00\r\n');
+    expect(blob.type).toBe('text/csv');
+    expect(transport.mock.calls[2][0]).toBe('/api/reports/invoices.csv?from=2026-10-01&customerId=customer-one');
+    expect(new Headers(transport.mock.calls[2][1]?.headers).get('Authorization')).toBe('Bearer new');
+  });
+  it('surfaces rejected CSV requests instead of downloading an error document', async () => {
+    const api = new LiveApi('/api', vi.fn<typeof fetch>().mockResolvedValue(json({ error: { message: 'Staff required', code: 'FORBIDDEN' } }, 403)));
+    await expect(api.invoiceCsv()).rejects.toMatchObject({ code: 'FORBIDDEN', status: 403 });
+  });
 });
