@@ -19,3 +19,13 @@ dist-ssr/
 *.tsbuildinfo
 
 /adithya/.worker-live/
+
+# Runtime output and local credentials at every package depth
+**/node_modules/
+**/dist/
+coverage/
+*.log
+**/.env
+**/.env.*
+!**/.env.example
+backend/src/generated/

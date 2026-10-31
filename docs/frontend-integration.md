@@ -1,44 +1,11 @@
-# WORK-001 frontend integration plan
+# Frontend/backend integration
 
-## Inspected implementation
+The owner confirmed Abhishek's `bl_*` schema on 2026-10-31. `backend/README.md` documents the inspected API contracts. The default entry in `frontend/src/main.tsx` loads `live/ConnectedApp.tsx`, using `services/liveApi.ts`; it does not load local mock billing data. `VITE_APP_MODE=demo` explicitly selects the preserved older demo.
 
-React 18 + TypeScript strict mode, Vite 6, Tailwind 3, Lucide and Recharts are installed in package.json. No router or shadcn component package is installed. App.tsx selects nine page modules using local activeTab state; navigation is not URL-based. Reuse this structure for the next milestone rather than replacing the stack.
+The public `VITE_API_BASE_URL` defaults to `/api` through the Vite development proxy, or can be set to `http://localhost:4000/api`. Deployment must route `/api` to Express or set the public backend URL. Only server `.env` files hold database/service credentials.
 
-AppStateContext loads all collections and metrics through the typed singleton in services/apiAdapter.ts. types/billing.ts describes demo presentation models, not verified server schemas. The adapter persists demo records to localStorage and performs local lifecycle changes, batch invoicing, payments and financial calculations. USE_MOCK_FALLBACK does not implement network fallback: there are no live backend calls. Its /api/v1 TODO comments are unconfirmed proposals.
+The HTTP client sends Bearer tokens, handles the `{data,pagination}` response and `{error:{code,message,details,requestId}}` errors, refreshes expired access once, and retains monetary strings. Login/signup/reset/invitation flows use the confirmed auth endpoints. Signup never submits a role; `/me` supplies the authoritative application role. Session tokens remain in memory. The backend owns all authorization, calculations and persistence.
 
-Role switching selects seed users; ProtectedRouteGuard is presentation only. CustomerPortalPage filters globally loaded data using ID, email or a hardcoded NovaCloud name. This cannot establish customer isolation. AuthStaffPage is demo UI, not an authenticated session implementation. Never connect this global demo context to real customer records as-is.
+List pages use server-side pages of 20 records and supported search/status filters. Reference choosers also page on the server. Subscription forms accept either product lines with a plan, or a configured quotation template. Invoice generation uses the returned nextBillingDate as the explicit period. Receipt submissions use the inspected payment methods and a stable Idempotency-Key for unchanged retries. Printing fetches authenticated HTML into a script-disabled sandboxed preview. Finance reads `/reports/summary` without fabricated trend data or client billing computations.
 
-Styling uses shared CSS, Tailwind classes and shared status/currency/stepper components. The print stylesheet targets printable-invoice; browser/PDF output has not been visually verified. Navbar now identifies the app as a local demo and reports seed timing without claiming the dashboard SLA.
-
-## Configuration and deployment boundary
-
-services/apiConfig.ts reserves VITE_API_BASE_URL as a public absolute HTTP(S) backend base URL, optionally including a path prefix. It defaults to null and rejects embedded credentials, query strings and fragments. Supply it through the deployment environment before Vite builds; no .env file is required or changed. This configuration is deliberately not connected to speculative routes. No credentials belong in browser environment variables.
-
-Vite builds static assets into dist. No backend proxy, hosting configuration, auth integration or deployment validation was found in the inspected app configuration. Confirm hosting origin, CORS, session transport and API prefix with Engineer 2 before wiring requests. Backend source/deployment was not inspected: the supplied private reference is outside this task's checkout-only read boundary.
-
-## Contract request for Engineer 2 (supervisor to relay in team-chat)
-
-Please supply versioned request/response examples or an OpenAPI schema plus an accessible test backend for:
-
-- Login, logout, current user/roles and session refresh; cookie versus token transport, CSRF requirements, 401/403 behavior and error/field-validation envelope.
-- Products/variants, plans and quotation templates: list/detail/create/edit routes, IDs, required fields, money representation/currency and variant modifiers.
-- Customer lookup and quotation preview/submission: allowed fields, server totals/taxes/discounts, validity, draft editing and validation errors.
-- Subscription list/detail: search/filter/page or cursor parameters, total count, dates/time zones, allowed actions and transition requests/responses, including pause/resume/close conflicts.
-- Authenticated customer-scoped subscription/invoice list/detail routes deriving identity from the session; invoice print payload, totals, line fields and payment history.
-- Staff payment recording: permitted methods, amount representation, idempotency, validation, server-returned balances/status; customer payment initiation if supported.
-- Finance aggregates: MRR/ARR, receivables, collected revenue, currency, date ranges, trend series, freshness and paginated records/exports.
-
-Engineer 1: please confirm authoritative state transitions, cadence/date semantics, tax/discount/pricing representations, and a representative 10,000+ subscription dataset.
-
-These are questions, not API contracts. Direct team-chat edits are prohibited for this worker; the supervisor must relay this request and maintain milestone state/report/publication.
-
-## Ordered integration work
-
-1. Reuse the existing shells and shared components; verify responsive navigation, accessible forms and loading/error/empty recovery during WORK-002.
-2. Add a separate confirmed HTTP implementation behind the existing typed service methods only once schemas are known; map server DTOs to presentation models. Keep explicitly selected demo data isolated. Failed production mutations must surface errors rather than becoming successful local payments or lifecycle changes.
-3. Integrate catalog, quotation, subscription, customer and invoice workflows in milestone order. Replace client role selection with the real session boundary; backend must enforce authorization and tenant isolation.
-4. Replace local finance calculations with server aggregates and server paging. Measure the full dashboard with representative backend data, query time and browser render timing. Current seed generation timing excludes query, React rendering and dashboard interaction; it does not establish the 10,000-record <2-second target.
-
-## Validation scope
-
-npm run typecheck runs tsc --noEmit. npm run lint runs the same command and is not independent ESLint validation. npm test runs Vitest adapter/configuration tests in Node; existing adapter tests exercise demo behavior, not backend transition correctness. npm run build runs tsc and vite build. No browser interaction test harness is configured. Exact execution results are recorded in the worker handoff; no backend, auth isolation, deployment or dashboard SLA validation is claimed here.
+The actual Supabase direct/session DATABASE_URL is still required. No database migrations have been applied during integration. Live auth, customer ownership enforcement against a real database, billing persistence, SMTP and representative performance remain unverified. No automatic scheduler or payment gateway is configured. The incompatible Devang `/api/v1` backend/schema and demo-role authorization are not combined with `bl_*`; Devang's monorepo and CRUD/auth intent are implemented through the selected backend instead.
