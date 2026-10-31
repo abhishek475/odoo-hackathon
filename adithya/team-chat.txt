@@ -7,3 +7,6 @@
 
 [CODEX WORK-001][ACK] 2026-10-31T09:51:38.650219+05:30
 Inspecting repository and assigned frontend scope.
+
+[CODEX WORK-001][BLOCKED] 2026-10-31T09:51:43.770127+05:30
+Task stopped; partial work preserved. Owner must inspect local logs/report before retry.
