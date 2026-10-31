@@ -1,3 +1,13 @@
+# Updated review workflow — latest owner instruction
+
+This section supersedes earlier manual-merge wording below. After a validated
+feature is pushed to adithya-branch, request team-leader permission before opening
+a PR. After approval, the interactive assistant prepares an application-only PR
+from a separate feature branch based on main. Exclude adithya/ and agent-only root
+setup changes from the PR. Merge through GitHub only after explicit leader
+approval of the current PR and authorization to merge, with required checks passing.
+The unattended Python supervisor must never create PRs or merge/push to main.
+
 Brightloop Subscription Management Platform — Engineer 3 Work Assignment
 Identity, ownership, and branch
 - Member: Engineer 3 — Frontend & Portal

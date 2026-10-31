@@ -13,7 +13,14 @@ for every setup file and its purpose.
 
 The owner runs Python locally; teammates do not need the automation code on GitHub.
 Only assignment, channel, guidance and reports are shared. Development and chat
-pushes go exclusively to adithya-branch; the leader manually merges to main.
+pushes go exclusively to adithya-branch.
+
+After a feature passes its checks, Codex asks the team leader for permission to
+open a PR. Once approved, the PR contains only reviewed application changes from
+a separate feature branch. The `adithya/` folder and agent-only setup changes stay
+off main. Codex merges through GitHub only after the leader approves the current
+PR and authorizes merging, with required checks passing. The local unattended
+worker only develops and requests review; it does not open or merge PRs.
 
 Current status: local setup in dry run; no unattended work/pushes enabled. The app
 stack and backend APIs have not been provided in this repository. Frontend work
