@@ -88,3 +88,51 @@ Once confirmed and implementation is requested, I can start the integration foun
 
 No files changed.
 [END CODEX]
+
+Devang: The team has agreed on the frontend stack and architecture. Please proceed with building and implementing this:
+
+# ROLE & OBJECTIVE
+You are a Principal Frontend Architect. Build the complete, production-grade React + TypeScript + Tailwind CSS + shadcn/ui + Lucide React + Recharts frontend for **"Brightloop Software — Subscription Management & Recurring Billing System"**.
+
+## CRITICAL ARCHITECTURAL REQUIREMENT: ZERO-FAILURE MOCK ADAPTER PATTERN
+To ensure zero downtime or blocking during parallel backend development, you MUST implement a **Dual-Mode Service & State Layer (`/src/services/apiAdapter.ts`)** backed by stateful local storage / in-memory React Context (`USE_MOCK_FALLBACK = true`):
+1. Every action (creating products, transitioning subscription states, running batch billing day invoices, applying discounts, logging payments) MUST execute immediately on the rich stateful mock store if the backend API or Supabase connection is unreachable or not yet wired.
+2. Every file that interacts with data MUST include explicit, searchable placeholder comments formatted exactly as:
+   `// TODO: [BACKEND_HOOK] - <Method/Endpoint or Supabase Query> - <Expected Payload & Return Type>`
+3. Do NOT omit any feature, field, validation rule, or state transition mentioned in the specification below. Every button, modal, filter, and state badge must be 100% interactive in the UI right now.
+
+---
+
+## 1. DESIGN SYSTEM & AESTHETIC
+- **Theme:** Editorial Dark Monochrome canvas (`#09090b` background, `#121215` elevated cards, `#27272a` crisp 1px borders) paired with a high-contrast pale cyan accent (`#67e8f9` / `cyan-300`) for primary actions and active states.
+- **Status Badges:** Semantic color-coded pills:
+  - `Draft`: Zinc/Gray | `Quotation`: Amber/Yellow | `Confirmed`: Blue | `Active` / `Paid`: Emerald Green | `Closed` / `Cancelled` / `Overdue`: Rose Red.
+- **Navigation:** Classic top/side persistent command layout with instant Role Switcher (`Admin`, `Internal Staff`, `Customer Portal`) in the top navbar for live demo and testing, alongside real Auth views.
+- **Performance:** All table filtering, search, and dashboard aggregations must execute in <50ms client-side (guaranteeing the <2-second SLA even with thousands of mock rows). Include a "Seed 2,500 Subscriptions" stress-test button in the Admin toolbar to prove sub-2-second rendering.
+
+---
+
+## 2. FOLDER STRUCTURE TO SCAFFOLD
+```text
+src/
+├── types/
+│   └── billing.ts              # Strict TS interfaces for all entities & state machines
+├── mocks/
+│   └── seedData.ts             # Realistic Brightloop Software initial dataset + 2,500-row generator
+├── services/
+│   └── apiAdapter.ts           # Central service layer with try/catch fallback + // [BACKEND_HOOK] comments
+├── context/
+│   └── AppStateContext.tsx     # Reactive store holding Auth, Products, Plans, Quotes, Subscriptions, Invoices, Discounts, Payments
+├── components/
+│   ├── layout/                 # Navbar, RoleSwitcher, Sidebar, ProtectedRouteGuard
+│   └── shared/                 # StatusBadge, StateMachineStepper, CurrencyFormatter
+└── pages/
+    ├── auth/                   # Login, Signup (strict regex validation), ForgotPassword, StaffManagement
+    ├── catalog/                # Products & Variants Manager, Billing Plans Configurator
+    ├── subscriptions/          # Quotation Templates, Subscription List & Lifecycle Detail View
+    ├── billing/                # Billing Day Batch Runner, Invoice Detail & Print/Send View
+    ├── discounts/              # Admin Discount Rule Engine
+    ├── payments/               # Payment Logging & Overdue Receivables Tracker
+    └── dashboard/              # Finance Lead Executive Analytics (<2s SLA) perfectly without any errors
+```
+
