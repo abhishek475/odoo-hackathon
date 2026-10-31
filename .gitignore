@@ -1,0 +1,9 @@
+# Local supervisor and execution data: never publish these.
+/adithya/automation/
+/adithya/.runtime/
+/adithya/.worker/
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
