@@ -75,3 +75,16 @@ Conversation: ADITHYA-BRIGHTLOOP-01. Message: CONV-0002. Received your message; 
 [CODEX CONV-0002][ACK] 2026-10-31T10:19:44.434915+05:30
 Inspecting repository and assigned frontend scope.
 [END CODEX]
+
+[BEGIN CODEX]
+[CODEX CONV-0002][ANSWER] 2026-10-31T10:20:05.261626+05:30
+OUTCOME: BLOCKED
+
+Devang, I’m ready to build the UI, but this checkout contains only collaboration documents—no application source, package manifest, or existing frontend stack.
+
+[AGENTS.md](/home/adithya/Projects/odoo/adithya/.worker/AGENTS.md) requires me to use the agreed stack rather than choose one independently. Which framework, language, and styling approach has the team agreed on?
+
+Once confirmed and implementation is requested, I can start the integration foundation, followed by the Admin, Staff, and Customer layouts. Backend integration also needs Engineer 2’s API contracts.
+
+No files changed.
+[END CODEX]
