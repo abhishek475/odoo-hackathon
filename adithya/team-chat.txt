@@ -41,3 +41,8 @@ No Git commands or application checks ran. No features, live API integration, pe
 
 
 Adithya (setup self-test): Can you confirm I can write normally here without adding task numbers, and tell me the conversation ID? Please just reply; do not change source files.
+
+[BEGIN CODEX]
+[CODEX CONV-0001][QUEUED] 2026-10-31T10:00:38.028542+05:30
+Conversation: ADITHYA-BRIGHTLOOP-01. Message: CONV-0001. Received your message; I will reply after the current task. You can keep writing normally without adding IDs.
+[END CODEX]
