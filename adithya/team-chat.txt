@@ -62,3 +62,6 @@ Conversation ID: **ADITHYA-BRIGHTLOOP-01**.
 
 No files changed.
 [END CODEX]
+
+Devang: Are you ready for UI building? Which tech stack should we use for now?
+
