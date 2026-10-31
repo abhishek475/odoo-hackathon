@@ -39,7 +39,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab }) => {
   const activeSubsCount = subscriptions.filter(s => s.status === 'Active').length;
 
   return (
-    <aside className="w-64 border-r border-[#27272a] bg-[#09090b] flex flex-col justify-between py-4 select-none shrink-0">
+    <aside className="w-full md:w-64 border-b md:border-b-0 md:border-r border-[#27272a] bg-[#09090b] flex flex-col justify-between py-4 select-none shrink-0">
       <div className="space-y-6">
         {/* Workspace Title & Current Role Context */}
         <div className="px-5">
@@ -55,12 +55,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab }) => {
         </div>
 
         {/* Navigation Sections */}
-        <nav className="space-y-1 px-3">
+        <nav aria-label="Workspace navigation" className="grid grid-cols-1 sm:grid-cols-2 md:block md:space-y-1 px-3">
           {/* Admin & Staff Sections */}
           {currentRole !== 'Customer' && (
             <>
               {currentRole === 'Admin' && (
                 <button
+                  aria-current={activeTab === 'dashboard' ? 'page' : undefined}
                   onClick={() => onSelectTab('dashboard')}
                   className={cn(
                     'w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium font-mono transition-colors',
@@ -73,12 +74,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab }) => {
                     <LayoutDashboard className="w-4 h-4 text-cyan-400" />
                     <span>Executive Analytics</span>
                   </div>
-                  <span className="text-[10px] text-zinc-500 font-mono">&lt;2s SLA</span>
+                  <span className="text-[10px] text-zinc-500 font-mono">Demo</span>
                 </button>
               )}
 
               <button
-                onClick={() => onSelectTab('subscriptions')}
+                aria-current={activeTab === 'subscriptions' ? 'page' : undefined}
+                  onClick={() => onSelectTab('subscriptions')}
                 className={cn(
                   'w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium font-mono transition-colors',
                   activeTab === 'subscriptions'
@@ -96,7 +98,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab }) => {
               </button>
 
               <button
-                onClick={() => onSelectTab('quotations')}
+                aria-current={activeTab === 'quotations' ? 'page' : undefined}
+                  onClick={() => onSelectTab('quotations')}
                 className={cn(
                   'w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium font-mono transition-colors',
                   activeTab === 'quotations'
@@ -111,7 +114,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab }) => {
               </button>
 
               <button
-                onClick={() => onSelectTab('billing')}
+                aria-current={activeTab === 'billing' ? 'page' : undefined}
+                  onClick={() => onSelectTab('billing')}
                 className={cn(
                   'w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium font-mono transition-colors',
                   activeTab === 'billing'
@@ -131,7 +135,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab }) => {
               </button>
 
               <button
-                onClick={() => onSelectTab('payments')}
+                aria-current={activeTab === 'payments' ? 'page' : undefined}
+                  onClick={() => onSelectTab('payments')}
                 className={cn(
                   'w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium font-mono transition-colors',
                   activeTab === 'payments'
@@ -152,7 +157,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab }) => {
                   </div>
 
                   <button
-                    onClick={() => onSelectTab('catalog')}
+                    aria-current={activeTab === 'catalog' ? 'page' : undefined}
+                  onClick={() => onSelectTab('catalog')}
                     className={cn(
                       'w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium font-mono transition-colors',
                       activeTab === 'catalog'
@@ -167,7 +173,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab }) => {
                   </button>
 
                   <button
-                    onClick={() => onSelectTab('discounts')}
+                    aria-current={activeTab === 'discounts' ? 'page' : undefined}
+                  onClick={() => onSelectTab('discounts')}
                     className={cn(
                       'w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium font-mono transition-colors',
                       activeTab === 'discounts'
@@ -183,7 +190,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab }) => {
                   </button>
 
                   <button
-                    onClick={() => onSelectTab('auth-staff')}
+                    aria-current={activeTab === 'auth-staff' ? 'page' : undefined}
+                  onClick={() => onSelectTab('auth-staff')}
                     className={cn(
                       'w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium font-mono transition-colors',
                       activeTab === 'auth-staff'
@@ -204,7 +212,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab }) => {
           {/* Customer Portal Navigation */}
           {currentRole === 'Customer' && (
             <button
-              onClick={() => onSelectTab('customer-portal')}
+              aria-current={activeTab === 'customer-portal' ? 'page' : undefined}
+                  onClick={() => onSelectTab('customer-portal')}
               className={cn(
                 'w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium font-mono transition-colors',
                 activeTab === 'customer-portal'
@@ -226,7 +235,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab }) => {
         <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400">
           <span>Engine State:</span>
           <span className="text-emerald-400 flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Operational
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Local demo
           </span>
         </div>
         <p className="text-[10px] text-zinc-500 font-mono mt-1">Dual-Mode Mock Store Active</p>

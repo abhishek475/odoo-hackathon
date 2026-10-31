@@ -34,7 +34,7 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <header className="h-16 border-b border-[#27272a] bg-[#09090b]/90 backdrop-blur sticky top-0 z-40 px-6 flex items-center justify-between">
+    <header className="min-h-16 flex-wrap gap-3 py-3 border-b border-[#27272a] bg-[#09090b]/90 backdrop-blur sticky top-0 z-40 px-4 sm:px-6 flex items-center justify-between">
       {/* Brand & Platform Info */}
       <div className="flex items-center gap-3">
         <div className="w-8 h-8 rounded-lg bg-cyan-950 border border-cyan-500/40 flex items-center justify-center text-cyan-300 shadow-[0_0_15px_rgba(103,232,249,0.3)]">
@@ -47,7 +47,7 @@ export const Navbar: React.FC = () => {
               LOCAL DEMO
             </span>
           </div>
-          <p className="text-[11px] text-zinc-400 font-mono">Subscription & Recurring Billing Engine</p>
+          <p className="text-[11px] text-zinc-400 font-mono">Subscription & Recurring Billing</p>
         </div>
       </div>
 
@@ -79,6 +79,7 @@ export const Navbar: React.FC = () => {
           onClick={resetDefaults}
           disabled={isLoading}
           className="text-xs font-mono text-zinc-500 hover:text-zinc-300 transition-colors p-1"
+          aria-label="Reset local demo records"
           title="Reset local storage store to initial seed state"
         >
           <RotateCcw className="w-3.5 h-3.5" />
@@ -88,8 +89,9 @@ export const Navbar: React.FC = () => {
       {/* Right: Instant Role Switcher & User Profile */}
       <div className="flex items-center gap-3">
         {/* Role Switcher Pills */}
-        <div className="bg-[#121215] p-1 rounded-lg border border-[#27272a] flex items-center gap-1">
+        <div aria-label="Demo role selection" role="group" className="bg-[#121215] p-1 rounded-lg border border-[#27272a] flex items-center gap-1">
           <button
+            aria-pressed={currentRole === 'Admin'}
             onClick={() => switchRole('Admin')}
             className={cn(
               'px-2.5 py-1 rounded text-xs font-mono flex items-center gap-1.5 transition-all',
@@ -103,6 +105,7 @@ export const Navbar: React.FC = () => {
           </button>
 
           <button
+            aria-pressed={currentRole === 'Staff'}
             onClick={() => switchRole('Staff')}
             className={cn(
               'px-2.5 py-1 rounded text-xs font-mono flex items-center gap-1.5 transition-all',
@@ -116,6 +119,7 @@ export const Navbar: React.FC = () => {
           </button>
 
           <button
+            aria-pressed={currentRole === 'Customer'}
             onClick={() => switchRole('Customer')}
             className={cn(
               'px-2.5 py-1 rounded text-xs font-mono flex items-center gap-1.5 transition-all',

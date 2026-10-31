@@ -27,13 +27,13 @@ export const ProtectedRouteGuard: React.FC<ProtectedRouteGuardProps> = ({
 
         <div>
           <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-            Role Authorization Required
+            Demo workspace role
           </h2>
           <p className="text-xs text-zinc-400 mt-1">{fallbackMessage}</p>
         </div>
 
         <div className="text-[11px] text-zinc-500 bg-[#18181b] p-3 rounded border border-zinc-800">
-          Current Active Role: <strong className="text-zinc-300">{currentRole}</strong>
+          Demo role (navigation only): <strong className="text-zinc-300">{currentRole}</strong>
           <br />
           Allowed Roles: <strong className="text-cyan-300">{allowedRoles.join(', ')}</strong>
         </div>

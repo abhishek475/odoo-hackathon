@@ -52,3 +52,31 @@
     display: none !important;
   }
 }
+
+/* Shared keyboard and form treatment across the existing component stack. */
+@layer base {
+  :where(button, a, input, select, textarea):focus-visible {
+    outline: 2px solid #67e8f9;
+    outline-offset: 3px;
+  }
+  :where(input, select, textarea) { max-width: 100%; }
+  button:disabled { cursor: not-allowed; }
+}
+.skip-link {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 100;
+  padding: 0.75rem;
+  background: #67e8f9;
+  color: #09090b;
+  transform: translateY(-200%);
+}
+.skip-link:focus { transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
