@@ -57,7 +57,7 @@ describe('Dual-Mode ApiAdapter & State Layer', () => {
     expect(refreshed.amountDue).toBeCloseTo(prevBalance - paymentAmount);
   });
 
-  it('generates 2,500 stress test subscriptions in <50ms (meeting <2s SLA)', () => {
+  it('generates 2,500 demo subscriptions within a 100ms generator budget', () => {
     const t0 = performance.now();
     const generated = generateStressSubscriptions(2500);
     const durationMs = performance.now() - t0;

@@ -44,7 +44,7 @@ export const Navbar: React.FC = () => {
           <div className="flex items-center gap-2">
             <span className="font-bold text-sm tracking-tight text-white">BRIGHTLOOP</span>
             <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">
-              v2.4-PROD
+              LOCAL DEMO
             </span>
           </div>
           <p className="text-[11px] text-zinc-400 font-mono">Subscription & Recurring Billing Engine</p>
@@ -61,7 +61,7 @@ export const Navbar: React.FC = () => {
         {benchmarkStats && (
           <div className="flex items-center gap-2 text-xs font-mono text-emerald-400 border-l border-zinc-800 pl-3">
             <Sparkles className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-            <span>2.5K Seeded in {benchmarkStats.durationMs.toFixed(1)}ms (&lt;2s SLA verified)</span>
+            <span>Local seed: {benchmarkStats.durationMs.toFixed(1)}ms</span>
           </div>
         )}
 
@@ -69,7 +69,7 @@ export const Navbar: React.FC = () => {
           onClick={handleRunStress}
           disabled={stressing || isLoading}
           className="text-xs font-mono px-2.5 py-1 rounded bg-cyan-950/80 hover:bg-cyan-900/80 text-cyan-300 border border-cyan-800 flex items-center gap-1.5 transition-colors disabled:opacity-50"
-          title="Inject 2,500 active/quotation/confirmed records to test client aggregation SLA"
+          title="Add 2,500 demo records; timing measures generation and storage only"
         >
           <Zap className="w-3 h-3 text-cyan-400" />
           {stressing ? 'Generating...' : 'Seed 2,500 Records'}

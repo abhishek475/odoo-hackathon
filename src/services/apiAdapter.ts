@@ -21,7 +21,8 @@ import {
   generateStressSubscriptions,
 } from '../mocks/seedData';
 
-// CRITICAL ZERO-FAILURE FLAG: Fallback to mock store if backend is unavailable or not yet configured
+// Demo-only adapter: no backend requests are implemented. Endpoint TODOs below
+// are unverified proposals, not confirmed contracts. See docs/frontend-integration.md.
 export const USE_MOCK_FALLBACK = true;
 
 const STORAGE_KEYS = {
@@ -377,7 +378,7 @@ class ApiAdapter {
   }
 
   // -------------------------------------------------------------
-  // FINANCE METRICS (<50ms computation time guarantee)
+  // DEMO FINANCE METRICS (local illustrative calculations; no timing guarantee)
   // -------------------------------------------------------------
   // TODO: [BACKEND_HOOK] - GET /api/v1/analytics/finance-metrics - Returns: Promise<FinanceMetrics>
   async getFinanceMetrics(): Promise<FinanceMetrics> {
