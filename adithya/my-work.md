@@ -2,19 +2,19 @@ Brightloop Subscription Management Platform — Engineer 3 Work Assignment
 Identity, ownership, and branch
 - Member: Engineer 3 — Frontend & Portal
 - Project: Brightloop Subscription & Recurring Billing Engine
-- Automation working branch: test-branch only
-- Review message: CHECK test-branch (only after the required configured checks actually pass)
+- Automation working branch: adithya-branch only
+- Review message: CHECK adithya-branch (only after the required configured checks actually pass)
 - Integration: Team leader reviews and manually merges to main; never automatically push or merge to main.
 - Primary scope: Admin control panel, Staff Workspace, Customer Self-Service Portal, quotation builder, printable PDF invoice view, financial dashboard, and searchable/filterable tables.
 - Out of scope: Database migrations, recurring billing scheduler, financial calculations, authentication service, backend RBAC enforcement, subscription state machine implementation, payments persistence, and reporting aggregation APIs. These belong to Engineers 1 and 2. Frontend must consume their real interfaces when available.
 Instructions for the Codex coding worker
 1. Inspect the existing repository and its tech stack, routing, styling, component conventions, tests, and API clients before editing. Reuse what exists; do not install a new framework or replace existing structure unnecessarily.
 2. Work through the ordered WORK milestones below, delivering small, independently meaningful, testable commits. Prefer the smallest ready milestone; do not make cosmetic/empty commits merely to hit the hourly target.
-3. Poll TEAM_CHAT.txt on test-branch every 120 seconds via the supervisor, including during ongoing Codex work. Announce milestones; acknowledge requests and reply with concrete frontend contracts, blockers, and test results. Keep Member 3's assigned work the priority.
+3. Poll TEAM_CHAT.txt on adithya-branch every 120 seconds via the supervisor, including during ongoing Codex work. Announce milestones; acknowledge requests and reply with concrete frontend contracts, blockers, and test results. Keep Member 3's assigned work the priority.
 4. Before implementing screens dependent on unavailable endpoints, post a concise request for API contracts to the other engineers. Develop typed interface boundaries and isolated demo/mock data only where needed to proceed; never represent mocks as production integration or claim live API functionality when absent.
 5. Keep role-oriented navigation (Admin, Staff, Customer), loading/empty/error states, accessible forms, and responsive layouts. The backend, not client-side route hiding, must enforce authorization and customer isolation.
-6. At every completed milestone, run available relevant lint, type-check, test and build commands, record exact commands and outcomes, then commit and push safely to test-branch only. Do not claim a test ran if it did not.
-7. Fetch before pushing, preserve others' work, never force-push, and stop/report unsafe conflicts. Only write CHECK test-branch once the agreed validation gates are configured, pass, and the relevant pushed SHA is known.
+6. At every completed milestone, run available relevant lint, type-check, test and build commands, record exact commands and outcomes, then commit and push safely to adithya-branch only. Do not claim a test ran if it did not.
+7. Fetch before pushing, preserve others' work, never force-push, and stop/report unsafe conflicts. Only write CHECK adithya-branch once the agreed validation gates are configured, pass, and the relevant pushed SHA is known.
 8. Maintain the status of each WORK item in the supervisor's persistent state; do not rewrite this file just to create progress commits.
 Functional requirements grounded in the team blueprint
 The presentation layer has three role-gated areas: Admin Desk, Staff Workspace, and Customer Self-Service Portal. The backend exposes authenticated REST interfaces managed by Engineer 2. Build UI for the states below, but do not invent backend transitions:
@@ -117,4 +117,4 @@ Success criteria and scope boundaries
 - No client-side authorization guarantees or invented financial truth.
 - Customer data isolation verified via backend integration tests (the UI alone cannot prove it).
 - Finance dashboard <2-second target measured on representative 10,000+ records; if not verifiable, say so explicitly.
-- Meaningful, scoped commits pushed only to test-branch and reviewed manually before main integration.
+- Meaningful, scoped commits pushed only to adithya-branch and reviewed manually before main integration.

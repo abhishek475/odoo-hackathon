@@ -9,8 +9,8 @@ portal scope; it does not authorize inventing the team's backend or replacing an
 unknown app stack. The nine milestones have been installed, not implemented.
 
 The previous nested `hackathon_codex_agent_v2/hackathon_codex_agent` directory was
-consolidated into `adithya`. The earlier branch restriction `adithya-branch` was
-replaced with the owner's requested `test-branch`. A local branch was created at
+consolidated into `adithya`. The owner's latest instruction selects `adithya-branch` for all publication,
+superseding the earlier test branch name. A local branch was created at
 the initial commit; the open checkout remains main. A read-only GitHub branch
 query found only remote main. No commits, remote branches, messages, pushes or
 application code were published by this setup.
@@ -20,16 +20,16 @@ application code were published by this setup.
 | File | Purpose and changes |
 | --- | --- |
 | `.gitignore` | Excludes the entire Python supervisor, config, runtime, worker checkout, bytecode and environment secrets. The ignore rules were verified with `git check-ignore`. No force-add is needed. |
-| `AGENTS.md` | Repository guidance for Engineer 3 scope, preserving teammate code, test-branch-only development, honest validation and per-file explanations. |
+| `AGENTS.md` | Repository guidance for Engineer 3 scope, preserving teammate code, adithya-branch-only development, honest validation and per-file explanations. |
 | `adithya/README.md` | Teammate entry point: where to send questions/tasks, where reports live and current setup limitations. |
-| `adithya/my-work.md` | The supplied Engineer 3 assignment, copied intact, including ordered WORK 001–009, UI requirements, backend dependencies and acceptance criteria. |
+| `adithya/my-work.md` | The supplied Engineer 3 assignment, with branch references updated to the owner’s latest instruction, including ordered WORK 001–009, UI requirements, backend dependencies and acceptance criteria. |
 | `adithya/team-chat.txt` | Shared append-only message channel with documented task/question formats. No sample implementation task will accidentally execute. |
 | `adithya/reports/setup.md` | This inventory, design rationale, validation evidence and current blockers. Future task reports explain their own application changes. |
 
 Python does not need to be on GitHub: this owner's laptop runs it locally. The
-channel and reports must be on test-branch for teammates to see and edit them.
+channel and reports must be on adithya-branch for teammates to see and edit them.
 The owner subsequently authorized a one-time publication of these shared files
-to test-branch. Automatic worker execution and automatic pushes remain disabled.
+to adithya-branch. Automatic worker execution and automatic pushes remain disabled.
 
 ## Private local files (ignored; never add to Git)
 
@@ -39,8 +39,8 @@ to test-branch. Automatic worker execution and automatic pushes remain disabled.
 | `adithya/automation/task_manager.py` | Supports `[WORK ID]`, `[TASK ID][Name]`, `[QUESTION ID][Name]` and older `[TEAMMATE][TASK ID]` forms. Excludes agent replies, deduplicates IDs, atomically persists queue/outbox and blocks interrupted running work on restart. Use new IDs for follow-ups. |
 | `adithya/automation/chat_monitor.py` | Fetches remote channel, queues new requests and persists acknowledgements. Publishes via detached temporary worktrees with bounded normal-push retries and marker deduplication, preserving concurrent GitHub edits. Failed notifications remain queued. |
 | `adithya/automation/codex_runner.py` | Fixes pipe deadlock by writing combined stdout/stderr directly to local files. Input is file-backed too. Polls chat while subprocesses run. On timeout/interruption terminates the process group with TERM, escalating to KILL after five seconds. Temporary prompts are removed afterward. |
-| `adithya/automation/git_manager.py` | Uses trusted supervisor Git commands, detached isolated worktree, exact repository ownership check, strict test-branch destination, fetch/rebase/check/push retry loop, protected-file checks and bounded AI conflict handling. Never resets or force-pushes. No remote main merge/push path exists. |
-| `adithya/automation/config.json` | test-branch destination, manual main integration, absolute private worktree path, 120-second polling, 1800-second Codex timeout, 300-second check timeout, three Git retries, dry_run true and auto_push false. Application checks deliberately empty until the actual app is available. |
+| `adithya/automation/git_manager.py` | Uses trusted supervisor Git commands, detached isolated worktree, exact repository ownership check, strict adithya-branch destination, fetch/rebase/check/push retry loop, protected-file checks and bounded AI conflict handling. Never resets or force-pushes. No remote main merge/push path exists. |
+| `adithya/automation/config.json` | adithya-branch destination, manual main integration, absolute private worktree path, 120-second polling, 1800-second Codex timeout, 300-second check timeout, three Git retries, dry_run true and auto_push false. Application checks deliberately empty until the actual app is available. |
 | `adithya/automation/requirements.txt` | Documents Python standard-library-only implementation; no pip install needed. Git and Codex are external CLI requirements. |
 | `adithya/automation/start.sh` | Starts supervisor with nohup and local log redirection, independent of the VS Code window. Duplicate execution is rejected by the Python file lock. |
 | `adithya/automation/stop.sh` | Requests graceful stop; lets active task finish and preserves work. |
@@ -98,7 +98,7 @@ and ignored. The worker worktree is created only when approved live work starts.
 ## Current blockers and practical limits
 
 There is no frontend app or confirmed stack to extend yet. Actual backend contracts
-and application validation gates are missing. At initial setup, remote test-branch and the shared channel had not been published;
+and application validation gates are missing. At initial setup, remote adithya-branch and the shared channel had not been published;
 the owner subsequently authorized their one-time publication. No unattended process is running. No application
 feature, API integration, billing computation or performance SLA has been validated.
 

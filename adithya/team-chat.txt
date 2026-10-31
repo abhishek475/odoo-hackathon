@@ -1,5 +1,5 @@
 # Brightloop — Engineer 3 / Adithya
-# Shared channel on test-branch. Use unique IDs; never reuse an old ID for a new request.
+# Shared channel on adithya-branch. Use unique IDs; never reuse an old ID for a new request.
 # Questions: [QUESTION 101][Name] followed by the question.
 # Requests: [TASK 102][Name] followed by the request.
 # Also supported: [TEAMMATE][TASK 103] and [TEAMMATE][QUESTION 104].
