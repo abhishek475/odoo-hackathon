@@ -10,8 +10,8 @@ are needed. Adding your name is helpful, but optional. For example:
 
 Codex assigns a message ID, remembers recent conversation context and replies in
 the same file. You can ask follow-up questions normally. Keep previous messages
-and replies, and never include passwords or secrets. It polls roughly every two
-minutes; replies wait until the current job finishes. Older tagged messages still
+and replies, and never include passwords or secrets. It polls roughly every 30
+seconds; replies wait until the current job finishes. Older tagged messages still
 work for anyone already using them.
 
 Completed milestones include per-file explanations, design decisions, integration
@@ -39,3 +39,7 @@ explicitly confirms the stack and requests implementation, the worker can develo
 scoped frontend changes; publication still requires real validation gates to pass. WORK-001 is blocked;
 later milestones remain queued. No application checks or performance targets have
 been verified. See [activation report](reports/activation.md).
+
+The owner has authorized teammates to request additional project work in this
+channel. Existing validation, secret protection, and leader approval for PRs/main
+merges still apply. Append requests normally; no message IDs are required.

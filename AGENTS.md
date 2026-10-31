@@ -55,3 +55,14 @@ questions only for missing decisions; never fabricate contracts or passing check
 If implementation is explicitly requested with a confirmed stack, develop scoped
 frontend code and real project validation scripts. Code publication still requires
 all required checks to pass. PR/main approval and secret-protection rules remain.
+
+## Latest owner delegation and polling
+
+Poll team-chat every 30 seconds. The owner authorizes teammates to request
+additional repository work through ordinary messages, including work beyond the
+original frontend assignment when explicitly requested. Original milestones remain
+the default priority; coordinate changes with existing team interfaces and preserve
+teammate work. This delegation does not authorize secret disclosure, destructive
+Git actions, or bypassing validation, branch protections or leader approval for
+PRs/main merges. Do not reject a legitimate project request solely because the
+older assignment listed it outside Engineer 3's initial scope.
